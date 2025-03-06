@@ -1,0 +1,42 @@
+.sidebar {
+  transform: translateX(-100%);  /* Hide sidebar by default */
+  transition: transform 0.3s ease;
+  background: var(--background-color);  /* Use theme variable instead of #fff */
+  color: var(--text-color);  /* For text color */
+}
+
+.sidebar.open {
+  transform: translateX(0);
+}
+
+.toggle-button {
+  position: fixed;
+  right: 270px;    /* Position it just outside the sidebar (assuming sidebar is 250px wide) */
+  top: 20px;
+  z-index: 1000;
+  background: var(--background-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  /* Add your other button styling */
+}
+
+/* When sidebar is closed, move button to the right edge */
+.sidebar:not(.open) + .toggle-button {
+  right: 20px;
+}
+
+/* Dark mode specific styles */
+[data-theme='dark'] .sidebar,
+[data-theme='dark'] .toggle-button {
+  --background-color: #1a1a1a;  /* Dark gray background */
+  --text-color: #ffffff;        /* White text */
+  --border-color: #333;         /* Darker border */
+}
+
+/* Light mode specific styles */
+[data-theme='light'] .sidebar,
+[data-theme='light'] .toggle-button {
+  --background-color: #ffffff;  /* White background */
+  --text-color: #000000;       /* Black text */
+  --border-color: #e0e0e0;     /* Light border */
+} 

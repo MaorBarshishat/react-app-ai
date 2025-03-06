@@ -1,0 +1,3819 @@
+/* Button for investigation items */
+.investigation-item {
+    cursor: pointer;
+    justify-content: space-between;
+    padding: 10px;
+    font-size: 16px;
+    background-color: #2e353d;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    transition: background-color 0.3s ease;
+    margin-block-start: 15px;
+  }
+  
+  .investigation-item:hover {
+    background-color: rgba(0, 123, 255, 0.2);
+  }
+  
+  /* Styles for subinvestigation items */
+  .subinvestigation-list {
+    margin: 0;
+    border-radius: 0 0 15px 15px;
+    background-color: transparent;
+    padding-inline: 20px 30px;
+  }
+  
+  .subinvestigation-item {
+    color: white;
+    background-color: #2e353d;
+    border: none;
+    padding: 8px 12px;
+    margin-block: 5px;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.3s ease;
+  }
+  
+  .subinvestigation-item:hover {
+    background-color: rgba(0, 123, 255, 0.2);
+  }
+
+.investigations-container {
+  height: 100%;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  color: var(--color-primary);
+}
+
+.investigations-header {
+  margin-bottom: 1.5rem;
+}
+
+.investigations-header h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+}
+
+.investigations-header p {
+  color: #718096;
+  font-size: 1rem;
+}
+
+.investigation-content {
+  display: flex;
+  gap: 2.5rem;
+  flex: 1;
+  height: calc(100vh - 180px);
+  margin-top: -1rem;
+}
+
+/* Folder Sidebar */
+.folder-sidebar {
+  width: 320px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px var(--shadow-color);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.folder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+
+.folder-header h3 {
+  font-size: 1rem;
+  color: var(--color-secondary);
+}
+
+.new-root-button {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: #6C757D;
+  background: #5a5a5a;
+}
+
+.new-root-button:hover {
+  background: #7A828B;
+}
+
+.folder-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.5rem 0;
+  width: 100%;
+}
+
+.folder-item, .file-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  position: relative;
+  border-left: 3px solid transparent;
+  margin-bottom: 2px;
+  font-size: 0.9rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.folder-item:hover, .file-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.folder-item.selected, .file-item.selected {
+  background-color: var(--bg-tertiary); /* Same as hover background */
+  border: 1px solid #5a5a5a; /* Gold border for emphasis */
+  color: #FFFFFF; /* White text for contrast */
+}
+
+.folder-icon, .file-icon {
+  margin-right: 0.5rem;
+  color: #4a5568;
+  font-size: 1rem;
+}
+
+.folder-item.selected .folder-icon, .file-item.selected .file-icon {
+  color: #3182ce;
+}
+
+.file-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  padding-right: 30px; /* Make space for the action icon */
+}
+
+.file-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-badges {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto; /* Push to right side of content */
+  margin-right: 8px;
+  flex: 0 0 auto; /* Don't allow growing or shrinking */
+}
+
+.file-badges .status-badge,
+.file-badges .severity-badge {
+  background: transparent;
+  padding: 1px 4px;
+  font-size: 0.6rem;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  flex: 0 0 auto; /* Don't grow or shrink */
+  text-align: center;
+  max-width: 60px; /* Limit maximum width */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.folder-actions {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.action-icon {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+  color: #a0aec0;
+}
+
+.file-item:hover .action-icon {
+  opacity: 1;
+}
+
+.action-icon:hover {
+  transform: translateY(-50%) scale(1.2);
+  color: white;
+}
+
+/* Improved dropdown menus for plus and ellipsis buttons */
+.new-item-menu, .actions-menu {
+  position: absolute;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  min-width: 180px;
+  overflow: hidden;
+}
+
+.new-item-menu.root-menu {
+  top: calc(100% + 5px);
+  right: 0;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.menu-item:hover {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.menu-item svg {
+  font-size: 0.9rem;
+}
+
+.create-folder-btn svg {
+  color: #f6e05e; /* Yellow for folder icon */
+}
+
+.create-file-btn svg {
+  color: #4299e1; /* Blue for file icon */
+}
+
+/* Make the menu item hover effect match the design */
+.menu-item:hover svg {
+  color: white;
+}
+
+.severity-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: 0.5rem;
+}
+
+.severity-indicator.severity-low {
+  background-color: #48bb78;
+}
+
+.severity-indicator.severity-medium {
+  background-color: #ed8936;
+}
+
+.severity-indicator.severity-high {
+  background-color: #e53e3e;
+}
+
+.severity-indicator.severity-critical {
+  background-color: #742a2a;
+}
+
+/* Details Panel */
+.details-panel {
+  flex: 1;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px var(--shadow-color);
+  padding: 2rem;
+  overflow-y: auto;
+  padding-top: 1rem;
+}
+
+.details-panel::-webkit-scrollbar {
+  display: none;
+}
+
+
+.no-selection {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a0aec0;
+}
+
+.file-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.file-details-header h2 {
+  font-size: 1.5rem;
+  color: #2d3748;
+}
+
+
+.action-button {
+  background-color: #4CAF50; /* Green */
+  color: #FFFFFF;
+  border: none;
+  font-size: 0.95rem;
+  padding: 10px 20px;
+  margin-right: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.action-button:hover {
+  background-color: #66BB6A; /* Light green on hover */
+}
+
+.investigate-button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+  background: var(--accent-color);
+  color: white;
+}
+
+.investigate-button:hover {
+  background-color: #2a69ac;
+  transform: translateY(-1px);
+}
+
+/* Edit button - default style */
+.action-button {
+  background: var(--bg-tertiary);
+}
+
+/* Investigate button - green style */
+.action-button.primary {
+  background-color: #4CAF50; /* Green */
+  color: #FFFFFF;
+  border: none;
+  padding: 10px 20px;
+  margin-right: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.edit-button {
+  background-color: #FFA500; /* Orange */
+  color: #FFFFFF;
+  border: none;
+  padding: 10px 20px;
+  margin-right: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.edit-button:hover {
+  background-color: #FFB74D; /* Lighter orange on hover */
+}
+
+.action-button.primary:hover {
+  background: #66BB6A; /* Slightly more saturated green on hover */
+}
+
+/* Delete button - red style */
+.action-button.danger {
+  background-color: #F44336; /* Red */
+  color: #FFFFFF;
+  border: none;
+  padding: 10px 20px;
+  margin-right: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.action-button.danger:hover {
+  background: #EF5350; /* Slightly more saturated red on hover */
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail-label {
+  font-size: 0.75rem;
+  color: var(--color-secondary);
+  font-weight: 500;
+}
+
+.detail-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #edf2f7;
+}
+
+.detail-section h3 {
+  font-size: 1rem;
+  color: #4a5568;
+  margin-bottom: 0.75rem;
+}
+
+/* Status and Severity Badges */
+.status-badge, .severity-badge {
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+  width: auto; /* Make width fit content */
+  white-space: nowrap;
+}
+
+/* Status badges with fitted background */
+.status-badge.open {
+  background-color: rgba(66, 153, 225, 0.9);
+  color: white;
+}
+
+.status-badge.in-progress {
+  background-color: rgba(237, 137, 54, 0.9);
+  color: white;
+}
+
+.status-badge.closed {
+  background-color: rgba(72, 187, 120, 0.9);
+  color: white;
+}
+
+/* Severity badges with fitted background */
+.severity-badge.low {
+  background-color: rgba(72, 187, 120, 0.9);
+  color: white;
+}
+
+.severity-badge.medium {
+  background-color: rgba(237, 137, 54, 0.9);
+  color: white;
+}
+
+.severity-badge.high {
+  background-color: rgba(229, 62, 62, 0.9);
+  color: white;
+}
+
+.severity-badge.critical {
+  background-color: rgba(116, 42, 42, 0.9);
+  color: white;
+}
+
+/* Form Styles */
+.edit-investigation-form {
+  padding: 1rem 0;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-section {
+  margin-bottom: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #edf2f7;
+}
+
+.form-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  color: #ffffff;
+  margin-bottom: 0.75rem;
+}
+
+.form-row {
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--color-secondary);
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+.form-control {
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  color: var(--color-primary);
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.form-control:focus {
+  border-color: var(--accent-color);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15);
+}
+
+.input-with-button {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.add-button {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  min-width: 80px;
+  transition: all 0.2s;
+}
+
+.add-button:hover:not(:disabled) {
+  background: var(--accent-light);
+}
+
+.add-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.date-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.date-range-inputs span {
+  color: #718096;
+}
+
+.tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.tag-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--bg-tertiary);;
+  color: #3182ce;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.remove-tag {
+  background: none;
+  border: none;
+  color: #3182ce;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin-left: 0.25rem;
+}
+
+.remove-tag:hover {
+  color: #2c5282;
+}
+
+.description-field {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Viewing styles */
+.tags-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.detail-tag {
+  background-color: #535557; /* Dark background */
+  color: #FFFFFF; /* Light text color */
+ 
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.detail-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Enhanced Table Styles */
+.table-container {
+  max-height: 600px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  scrollbar-width: none; /* Firefox */
+}
+
+.table-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.9rem;
+}
+
+.results-table th, 
+.results-table td {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  color: white;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.results-table th {
+  background-color: var(--bg-tertiary);
+  color: var(--color-secondary);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.lead-row {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.lead-row:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.lead-row.expanded {
+  background-color: var(--accent-light);
+  color: white;
+}
+
+.lead-row td {
+  position: relative;
+}
+
+.lead-row td:after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.asset-name {
+  font-weight: 600;
+}
+
+.apps-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.app-tag {
+  padding: 0.25rem 0.5rem;
+  background: var(--bg-tertiary);
+  color: var(--color-primary) !important;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.journey-status {
+  text-align: center;
+  color: var(--accent-color);
+}
+
+/* User Journey Table Styles */
+.user-journey-row {
+  background-color: var(--bg-tertiary);
+}
+
+.user-journey-row td {
+  padding: 0;
+}
+
+.user-journey-container {
+  padding: 1.5rem;
+}
+
+.journey-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.journey-header h4 {
+  font-size: 1.1rem;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.journey-metadata {
+  display: flex;
+  gap: 1.5rem;
+  color: var(--color-secondary);
+  font-size: 0.85rem;
+}
+
+.journey-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.journey-table th,
+.journey-table td {
+  padding: 0.8rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.journey-table th {
+  background-color: var(--accent-color);
+  color: white;
+  font-weight: 500;
+}
+
+.journey-table .even-row {
+  background-color: var(--bg-secondary);
+}
+
+.journey-table .odd-row {
+  background-color: var(--bg-tertiary);
+}
+
+.journey-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Fix for text color issues */
+.investigations-container * {
+  color: var(--color-primary);
+}
+
+/* Then override specific elements that need different colors */
+.app-tag, 
+.journey-table th,
+.action-button.primary,
+.lead-row.expanded, 
+.lead-row.expanded * {
+  color: white !important;
+}
+
+.journey-status,
+.folder-icon, 
+.file-icon,
+.new-root-button,
+.folder-actions-button,
+.status-badge,
+.severity-badge {
+  color: inherit;
+}
+
+.folder-header h3,
+.detail-label,
+.form-group label,
+.journey-metadata span,
+.investigations-header p {
+  color: var(--color-secondary) !important;
+}
+
+/* Fix for user journey table in dark mode */
+[data-theme="dark"] .journey-table .even-row td,
+[data-theme="dark"] .journey-table .odd-row td {
+  color: var(--color-primary);
+}
+
+/* Fix for form controls in dark mode */
+[data-theme="dark"] .form-control {
+  background-color: var(--bg-secondary);
+  color: var(--color-primary);
+  border-color: var(--border-color);
+}
+
+/* Fix for modal in dark mode */
+[data-theme="dark"] .modal-content {
+  background-color: var(--bg-secondary);
+}
+
+/* Fix for new item menus */
+.new-item-menu {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.new-item-menu button {
+  color: var(--color-primary);
+}
+
+.new-item-menu button:hover {
+  background-color: var(--bg-tertiary);
+}
+
+/* Add styles for the rename functionality */
+.rename-form {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+}
+
+.rename-input {
+  flex: 1;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--accent-color);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: var(--bg-secondary);
+  color: var(--color-primary);
+}
+
+.rename-save-button,
+.rename-cancel-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  color: var(--color-primary);
+}
+
+.rename-save-button {
+  background: var(--accent-light);
+  color: white;
+}
+
+.rename-cancel-button {
+  background: var(--bg-tertiary);
+}
+
+.rename-save-button:hover {
+  background: var(--accent-color);
+}
+
+.rename-cancel-button:hover {
+  background: #f56565;
+  color: white;
+}
+
+/* Action menu improvements */
+.action-menu {
+  position: fixed;
+  right: auto;
+  top: auto;
+  background: black;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  width: 180px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.menu-item {
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.menu-item:hover {
+  transform: translateX(3px);
+}
+
+.menu-item.delete-action {
+  color: #ff4d4d;
+}
+
+.menu-item.delete-action:hover {
+  background: #3a0000;
+}
+
+/* Add this to ensure icons are visible */
+.menu-item svg {
+  color: inherit;
+}
+
+/* Detail improvements */
+.detail-card-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.detail-card {
+  padding: 1.25rem;
+  border-radius: 10px;
+}
+
+.date-type-selector {
+  margin-bottom: 1.5rem;
+}
+
+.folder-children {
+  margin-left: 0.75rem;
+  border-left: 1px dashed var(--border-color);
+  padding-left: 0.15rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Add these for improved date selection */
+.date-toggle-container {
+  display: flex;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+  overflow: hidden;
+  width: fit-content;
+  border: 1px solid var(--border-color);
+}
+
+.date-toggle-btn {
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: var(--color-secondary);
+}
+
+.date-toggle-btn.active {
+  background: var(--accent-color);
+  color: white;
+}
+
+.date-range-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-range-separator {
+  margin: 0 0.5rem;
+  color: var(--color-secondary);
+}
+
+.dates-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.date-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.remove-date {
+  background: none;
+  border: none;
+  color: var(--color-secondary);
+  cursor: pointer;
+  display: flex;
+  padding: 0;
+  font-size: 0.85rem;
+}
+
+.remove-date:hover {
+  color: #f56565;
+}
+
+/* 8 & 9. Fix color issues */
+.apps-list .app-tag {
+  color: var(--color-primary) !important;
+  background: var(--bg-tertiary);
+}
+
+.lead-row.expanded, 
+.lead-row.expanded * {
+  color: var(--color-primary) !important;
+}
+
+/* Make sure ALL text in tables is black */
+.results-table *, 
+.journey-table *,
+.app-tag,
+.lead-row *,
+.lead-row.expanded *,
+.journey-metadata *,
+.user-journey-container * {
+  color: rgb(255, 255, 255) !important;
+}
+
+/* Make the investigate button have black text */
+.action-button.primary {
+  color: black !important;
+  font-weight: 600;
+}
+
+/* Override any white text that might be coming from elsewhere */
+[data-theme="light"] .app-tag,
+[data-theme="light"] .journey-table th,
+[data-theme="light"] .lead-row.expanded, 
+[data-theme="light"] .lead-row.expanded * {
+  color: black !important;
+}
+
+/* Only in dark mode, use appropriate contrasting colors */
+[data-theme="dark"] .app-tag,
+[data-theme="dark"] .journey-table th,
+[data-theme="dark"] .lead-row.expanded, 
+[data-theme="dark"] .lead-row.expanded * {
+  color: var(--color-primary) !important;
+}
+
+.menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 900; /* Below the menus */
+  background: transparent;
+}
+
+/* Dark Mode Toggle Button */
+.dark-mode-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  color: var(--color-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  box-shadow: 0 2px 10px var(--shadow-color);
+  border: none;
+  cursor: pointer;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.dark-mode-toggle:hover {
+  transform: rotate(15deg);
+  background: var(--accent-color);
+  color: white;
+}
+
+/* Back button styling */
+.back-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  color: var(--color-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background: var(--accent-color);
+  color: white;
+  transform: translateX(3px);
+}
+
+/* Make sure the results container has position relative */
+.investigation-results {
+  position: relative;
+  padding-top: 2.5rem;
+}
+
+/* Move the results title down a bit for better spacing */
+.results-title {
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 1.5rem;
+}
+
+/* Integrated date range picker */
+.date-range-picker-container {
+  margin-bottom: 1rem;
+}
+
+.date-range-calendar {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  box-shadow: 0 2px 8px var(--shadow-color);
+  overflow: hidden;
+  width: 100%;
+  max-width: 500px;
+}
+
+.calendar-header {
+  background: var(--bg-tertiary);
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.calendar-dates {
+  padding: 1rem;
+}
+
+.date-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.date-input-group {
+  flex: 1;
+}
+
+.date-input-group label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+  color: var(--color-secondary);
+}
+
+.date-range-arrow {
+  font-size: 1.2rem;
+  color: var(--color-secondary);
+  margin: 0 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.add-range-button {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  width: 100%;
+  transition: background 0.2s;
+}
+
+.add-range-button:hover {
+  background: var(--accent-light);
+}
+
+.add-range-button:disabled {
+  background: var(--bg-tertiary);
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+/* Booking-style date picker */
+.booking-date-picker-container {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.date-field-container {
+  position: relative;
+}
+
+.date-field {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+}
+
+.date-field:hover {
+  border-color: var(--accent-color);
+}
+
+.date-field-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--color-secondary);
+  margin-bottom: 4px;
+}
+
+.date-field-value {
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.booking-calendar {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: 680px;
+  max-width: 100vw;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+}
+
+.close-calendar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.close-calendar:hover {
+  background: var(--border-color);
+}
+
+.calendar-months {
+  display: flex;
+  padding: 20px;
+  gap: 30px;
+}
+
+@media (max-width: 768px) {
+  .calendar-months {
+    flex-direction: column;
+  }
+}
+
+.calendar-month {
+  flex: 1;
+}
+
+.month-header {
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.days-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.day-name {
+  font-size: 0.8rem;
+  color: var(--color-secondary);
+  padding: 5px;
+}
+
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.day-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.2s;
+  position: relative;
+  font-size: 0.9rem;
+  color: var(--color-primary);
+}
+
+.day-cell:hover:not(.empty) {
+  background: var(--bg-tertiary);
+}
+
+.day-cell.empty {
+  cursor: default;
+}
+
+.day-cell.start-date, .day-cell.end-date {
+  background: var(--accent-color);
+  color: white;
+  font-weight: 600;
+  z-index: 1;
+}
+
+.day-cell.in-range, .day-cell.selected:not(.start-date):not(.end-date) {
+  background: var(--accent-light);
+  border-radius: 0;
+}
+
+.calendar-shortcuts {
+  display: flex;
+  padding: 0 20px;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.shortcut {
+  padding: 8px 15px;
+  background: var(--bg-tertiary);
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--color-secondary);
+  transition: all 0.2s;
+}
+
+.shortcut:hover {
+  background: var(--accent-light);
+  color: var(--accent-color);
+}
+
+.calendar-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 15px 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.apply-button {
+  padding: 8px 20px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.apply-button:hover:not(:disabled) {
+  background: var(--accent-light);
+  color: var(--accent-color);
+}
+
+.apply-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* TABLE: */
+
+/* Investigation Details Display */
+.file-details {
+  padding: 2rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px var(--shadow-color);
+}
+
+.file-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.file-details-header h2 {
+  font-size: 1.8rem;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.file-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Edit Form Styles */
+.edit-investigation-form {
+  padding: 2rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px var(--shadow-color);
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.form-header h2 {
+  font-size: 1.8rem;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  color: var(--color-secondary);
+  font-weight: 500;
+}
+
+.form-control {
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  color: var(--color-primary);
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.form-control:focus {
+  border-color: var(--accent-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.1);
+}
+
+.description-field {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* Status and Severity Badges in Form */
+.status-badge, .severity-badge {
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Action Buttons */
+.action-button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+}
+
+.action-button.primary {
+  background: var(--accent-color);
+  color: white;
+}
+
+.action-button.primary:hover {
+  background: var(--accent-light);
+}
+
+.action-button.danger {
+  background: #f56565;
+  color: white;
+}
+
+.action-button.danger:hover {
+  background: #e53e3e;
+}
+
+/* Investigation Details Grid */
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.detail-label {
+  font-size: 0.85rem;
+  color: var(--color-secondary);
+  font-weight: 500;
+}
+
+.detail-value {
+  font-size: 1rem;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+/* Description Card */
+.description-card {
+  padding: 1.5rem;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  margin-top: 1.5rem;
+}
+
+.description-card h3 {
+  font-size: 1.1rem;
+  color: var(--color-secondary);
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.description-card p {
+  color: var(--color-primary);
+  line-height: 1.6;
+}
+
+/* For issue #4 & #5: Styles for multi-domain, assets and date ranges */
+.date-selection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.date-type-select {
+  width: 150px;
+}
+
+.date-specific, .date-range {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.dates-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.date-chip {
+  background: var(--bg-tertiary);
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.remove-date {
+  background: none;
+  border: none;
+  color: var(--color-secondary);
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.remove-date:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Modern enhancements */
+.details-section {
+  margin-bottom: 1.5rem;
+}
+
+.details-section h3 {
+  font-size: 1rem;
+  color: var(--color-secondary);
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+.details-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-chip {
+  background: rgba(49, 130, 206, 0.1);
+  color: var(--color-primary);
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(49, 130, 206, 0.2);
+}
+
+.no-data {
+  color: var(--color-secondary);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+/* Modern form input with chips */
+.form-input-with-chips {
+  margin-bottom: 15px;
+}
+
+.chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.form-chip {
+  background: rgba(49, 130, 206, 0.1);
+  color: var(--color-primary);
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(49, 130, 206, 0.2);
+}
+
+.chip-remove {
+  background: none;
+  border: none;
+  color: var(--color-secondary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+}
+
+.chip-remove:hover {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+}
+
+/* Modern enhancements */
+.form-control {
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  color: var(--color-primary);
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.form-control:focus {
+  border-color: var(--accent-color);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15);
+}
+
+/* Enhance action menu */
+.action-menu {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.menu-item {
+  padding: 0.6rem 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.menu-item:hover {
+  transform: translateX(3px);
+}
+
+/* Special styling for badges in the file list */
+.file-badges .status-badge,
+.file-badges .severity-badge {
+  background: transparent;
+  padding: 2px 6px;
+  font-size: 0.65rem;
+  border: 1px solid currentColor;
+  margin-left: 4px;
+}
+
+/* Status colors without backgrounds */
+.file-badges .status-badge.open {
+  color: #4299e1;
+  background: transparent;
+  border-color: #4299e1;
+}
+
+.file-badges .status-badge.in-progress {
+  color: #ed8936;
+  background: transparent;
+  border-color: #ed8936;
+}
+
+.file-badges .status-badge.closed {
+  color: #48bb78;
+  background: transparent;
+  border-color: #48bb78;
+}
+
+/* Severity colors without backgrounds */
+.file-badges .severity-badge.low {
+  color: #48bb78;
+  background: transparent;
+  border-color: #48bb78;
+}
+
+.file-badges .severity-badge.medium {
+  color: #ed8936;
+  background: transparent;
+  border-color: #ed8936;
+}
+
+.file-badges .severity-badge.high {
+  color: #e53e3e;
+  background: transparent;
+  border-color: #e53e3e;
+}
+
+.file-badges .severity-badge.critical {
+  color: #742a2a;
+  background: transparent;
+  border-color: #742a2a;
+}
+
+/* Fix file icon styles */
+.file-icon {
+  flex-shrink: 0; /* Prevent icon from shrinking */
+  margin-right: 8px;
+  font-size: 14px;
+  color: #a0aec0;
+  width: 16px; /* Fixed width */
+  height: 16px; /* Fixed height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure file content keeps icon visible */
+.file-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  position: relative;
+  padding-right: 30px; /* Make space for the action icon */
+}
+
+/* Investigation Results Styles - Dark Mode Compatible */
+.investigation-results {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  overflow: hidden;
+  color: var(--color-primary);
+}
+
+.results-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  position: relative;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: var(--color-primary);
+  font-size: 0.95rem;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.back-button svg {
+  font-size: 1.1rem;
+}
+
+.results-title {
+  width: 100%;
+  text-align: center;
+  font-size: 1.7rem;
+  color: var(--color-primary);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin: 0;
+  padding: 0;
+}
+
+.export-csv-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--accent-color);
+  border: none;
+  color: white;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.export-csv-button:hover {
+  background: var(--accent-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.export-csv-button svg {
+  font-size: 1rem;
+}
+
+.leads-header {
+  margin-bottom: 1.5rem;
+}
+
+.leads-header h3 {
+  margin-bottom: 1.2rem;
+  font-size: 1.3rem;
+  color: var(--color-secondary);
+  font-weight: 600;
+}
+
+.stats-summary {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  flex: 1;
+  min-width: 120px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--color-secondary);
+  font-weight: 500;
+}
+
+.timeframe .stat-value {
+  font-size: 1.2rem;
+}
+
+.leads-container {
+  padding: 2rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.leads-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.9rem;
+}
+
+.leads-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.leads-table th {
+  text-align: left;
+  padding: 1rem;
+  background: var(--bg-tertiary);
+  color: var(--color-secondary);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.leads-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+.leads-table tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.leads-table tr.expanded {
+  background: var(--bg-tertiary);
+}
+
+.lead-type {
+  display: inline-block;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 4px;
+  background: rgba(229, 62, 62, 0.1);
+  color: #e53e3e;
+  border: 1px solid rgba(229, 62, 62, 0.2);
+}
+
+.app-badge {
+  background: rgba(49, 130, 206, 0.1);
+  color: #3182ce;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  border: 1px solid rgba(49, 130, 206, 0.2);
+}
+
+.user-journey-toggle {
+  background: transparent;
+  color: var(--accent-color);
+  border: 1px solid var(--accent-color);
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.user-journey-toggle:hover {
+  background: rgba(49, 130, 206, 0.1);
+}
+
+.user-journey {
+  padding: 1.5rem;
+}
+
+.user-journey h3 {
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  color: var(--color-secondary);
+}
+
+.timeline {
+  position: relative;
+  padding-left: 2rem;
+  border-left: 2px solid var(--border-color);
+  margin-left: 1rem;
+  margin-bottom: 1rem;
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 2rem;
+}
+
+.timeline-item:before {
+  content: '';
+  position: absolute;
+  left: -2.5rem;
+  top: 0;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--accent-color);
+  border: 2px solid var(--bg-secondary);
+}
+
+.timeline-time {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.5rem;
+}
+
+.time {
+  font-weight: 500;
+  color: var(--color-primary);
+}
+
+.time-diff {
+  font-size: 0.8rem;
+  color: var(--color-secondary);
+}
+
+.timeline-content {
+  background: var(--bg-tertiary);
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.timeline-content h4 {
+  margin-bottom: 0.5rem;
+  color: var(--color-primary);
+}
+
+.timeline-content p {
+  color: var(--color-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* Make sure the dark mode variables are properly defined */
+:root {
+  --bg-primary: #1a202c;
+  --bg-secondary: #2d3748;
+  --bg-tertiary: #4a5568;
+  --color-primary: #f7fafc;
+  --color-secondary: #cbd5e0;
+  --accent-color: #3182ce;
+  --accent-light: #4299e1;
+  --border-color: #4a5568;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Journey row styling */
+.journey-row {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.journey-row td {
+  padding: 0;
+}
+
+/* Supportive data styling */
+.supportive-data {
+  max-width: 200px;
+  white-space: normal;
+  word-break: break-word;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: #e2e8f0;
+}
+
+/* Add toggle cell styling */
+.toggle-cell {
+  text-align: center;
+  width: 30px;
+  color: var(--accent-color);
+}
+
+/* Make the entire row cursor a pointer to indicate clickability */
+.leads-table tbody tr:not(.journey-row) {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+/* Journey table styling */
+.journey-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+.journey-table th {
+  background: var(--bg-tertiary);
+  color: var(--color-secondary);
+  font-weight: 500;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+}
+
+.journey-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.85rem;
+}
+
+.journey-table tr:last-child td {
+  border-bottom: none;
+}
+
+.journey-table .even-row {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.journey-table .odd-row {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Adjust user journey display */
+.user-journey {
+  padding: 1.5rem;
+}
+
+.user-journey h4 {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  color: var(--color-secondary);
+}
+
+/* Additional data sections styling */
+.additional-data-section {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 1.5rem;
+  letter-spacing: 1px;
+  border-bottom: 2px solid var(--accent-color);
+  padding-bottom: 0.75rem;
+  display: inline-block;
+}
+
+/* Related domains section */
+.domains-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.domain-card {
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 1.25rem;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.domain-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.domain-card.risk-high {
+  border-left: 4px solid #e53e3e;
+}
+
+.domain-card.risk-medium {
+  border-left: 4px solid #ed8936;
+}
+
+.domain-card.risk-low {
+  border-left: 4px solid #48bb78;
+}
+
+.domain-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 0.5rem;
+  word-break: break-word;
+}
+
+.domain-description {
+  font-size: 0.9rem;
+  color: var(--color-secondary);
+  margin-bottom: 1rem;
+}
+
+.risk-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.risk-badge.high {
+  background: rgba(229, 62, 62, 0.2);
+  color: #e53e3e;
+  border: 1px solid rgba(229, 62, 62, 0.3);
+}
+
+.risk-badge.medium {
+  background: rgba(237, 137, 54, 0.2);
+  color: #ed8936;
+  border: 1px solid rgba(237, 137, 54, 0.3);
+}
+
+.risk-badge.low {
+  background: rgba(72, 187, 120, 0.2);
+  color: #48bb78;
+  border: 1px solid rgba(72, 187, 120, 0.3);
+}
+
+/* Abnormal activities section */
+.activities-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.activities-table th {
+  background: var(--bg-tertiary);
+  color: var(--color-secondary);
+  font-weight: 500;
+  text-align: left;
+  padding: 1rem;
+  font-size: 0.9rem;
+}
+
+.activities-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9rem;
+}
+
+.activities-table tr:last-child td {
+  border-bottom: none;
+}
+
+.severity-high-bg {
+  background: rgba(229, 62, 62, 0.05);
+}
+
+.severity-medium-bg {
+  background: rgba(237, 137, 54, 0.05);
+}
+
+.severity-low-bg {
+  background: rgba(72, 187, 120, 0.05);
+}
+
+/* Data sources section */
+.data-sources-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.source-card {
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.source-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.source-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.source-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail .label {
+  color: var(--color-secondary);
+  font-size: 0.85rem;
+}
+
+.detail .value {
+  font-size: 1rem;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.detail .value.high {
+  color: #48bb78;
+}
+
+.detail .value.medium {
+  color: #ed8936;
+}
+
+.detail .value.low {
+  color: #e53e3e;
+}
+
+/* Row number styling */
+.row-number {
+  text-align: center;
+  color: var(--color-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Table actions section for the CSV button */
+.table-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Update CSV Export Button */
+.export-csv-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--accent-color);
+  border: none;
+  color: white;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.export-csv-button:hover {
+  background: var(--accent-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Adjusted corner return button styling */
+.corner-return-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 0 0 0 8px; /* Only round the bottom-left corner */
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.corner-return-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Loading overlay and spinner styles */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg-secondary);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--accent-color);
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+.loading-spinner p {
+  color: var(--color-primary);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Modern Date Selector Styles */
+.date-selector-container {
+  position: relative;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px var(--shadow-color);
+  margin-bottom: 2rem;
+}
+
+.date-selector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.date-selector-header h3 {
+  font-size: 1.1rem;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.date-type-toggle {
+  display: flex;
+  background: var(--bg-tertiary);
+  border-radius: 30px;
+  padding: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 24px;
+  color: var(--color-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.toggle-btn.active {
+  background: var(--accent-color);
+  color: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.date-display {
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.date-display:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.selected-date {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--color-primary);
+  font-size: 1.1rem;
+}
+
+.selected-date svg {
+  color: var(--accent-color);
+}
+
+.selected-date-range {
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+
+.date-range-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.date-separator {
+  width: 30px;
+  height: 2px;
+  background: var(--border-color);
+  margin: 0 1rem;
+}
+
+.date-label {
+  font-size: 0.8rem;
+  color: var(--color-secondary);
+  margin-bottom: 0.3rem;
+}
+
+.date-value {
+  font-size: 1.1rem;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.date-picker-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 100;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  padding: 1rem;
+  overflow: hidden;
+  width: 100%;
+}
+
+.date-picker-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+  margin-top: 1rem;
+}
+
+.date-apply-btn, .date-cancel-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.date-apply-btn {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+}
+
+.date-apply-btn:hover {
+  background: var(--accent-light);
+}
+
+.date-cancel-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--color-secondary);
+}
+
+.date-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-primary);
+}
+
+/* Selected Date Cards in Results */
+.selected-date-cards {
+  margin-bottom: 2.5rem;
+}
+
+.timeframe-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.timeframe-card {
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.timeframe-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.timeframe-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(49, 130, 206, 0.1);
+  color: var(--accent-color);
+  font-size: 1.2rem;
+}
+
+.timeframe-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.timeframe-label {
+  font-size: 0.85rem;
+  color: var(--color-secondary);
+  margin-bottom: 0.3rem;
+}
+
+.timeframe-value {
+  font-size: 1.1rem;
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+/* Customize the react-date-range calendar for dark mode */
+.rdrCalendarWrapper {
+  background: var(--bg-secondary);
+  color: var(--color-primary);
+}
+
+.rdrDateDisplayWrapper {
+  background: var(--bg-tertiary);
+}
+
+.rdrDateDisplay input {
+  background: var(--bg-secondary);
+  color: var(--color-primary);
+}
+
+.rdrMonthAndYearWrapper {
+  background: var(--bg-tertiary);
+}
+
+.rdrMonthAndYearPickers select {
+  background: var(--bg-secondary);
+  color: var(--color-primary);
+}
+
+.rdrMonthName {
+  color: var(--color-secondary);
+}
+
+.rdrDayNumber span {
+  color: var(--color-primary);
+}
+
+.rdrDayDisabled .rdrDayNumber span {
+  color: var(--color-secondary);
+  opacity: 0.5;
+}
+
+.rdrDayToday .rdrDayNumber span:after {
+  background: var(--accent-color);
+}
+
+.rdrDay:not(.rdrDayPassive) .rdrInRange ~ .rdrDayNumber span,
+.rdrDay:not(.rdrDayPassive) .rdrStartEdge ~ .rdrDayNumber span,
+.rdrDay:not(.rdrDayPassive) .rdrEndEdge ~ .rdrDayNumber span,
+.rdrDay:not(.rdrDayPassive) .rdrSelected ~ .rdrDayNumber span {
+  color: white;
+}
+
+/* Modern date section styling */
+.date-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.date-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.date-chip {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  min-width: 200px;
+}
+
+.date-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  border-color: var(--accent-color);
+}
+
+.chip-label {
+  position: absolute;
+  top: -10px;
+  left: 12px;
+  background: var(--accent-color);
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.chip-icon {
+  color: var(--accent-color);
+  font-size: 1.1rem;
+}
+
+.chip-text {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+/* Make the date selector better match the form styling */
+.date-selector-container {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
+}
+
+.date-selector-header {
+  margin-bottom: 1.2rem;
+}
+
+.date-selector-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 1rem;
+}
+
+/* Enhanced styles for date-type toggle to match form */
+.date-type-toggle {
+  display: flex;
+  gap: 10px;
+}
+
+.toggle-btn {
+  padding: 8px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--color-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  text-align: center;
+}
+
+.toggle-btn.active {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+.toggle-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Compact Date Form Section */
+.date-form-section {
+  width: 100%;
+}
+
+.date-type-selector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.date-type-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--color-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.date-type-btn svg {
+  font-size: 0.9rem;
+}
+
+.date-type-btn.active {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+.date-type-btn:hover:not(.active) {
+  background: var(--bg-tertiary);
+  color: var(--color-primary);
+}
+
+.date-input-container {
+  margin-bottom: 15px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.specific-date-input, .date-range-input {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.date-range-fields {
+  display: flex;
+  gap: 15px;
+  flex: 1;
+}
+
+.date-field {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.date-field label {
+  font-size: 0.8rem;
+  color: var(--color-secondary);
+  margin-bottom: 5px;
+}
+
+.date-input {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 8px 10px;
+  color: var(--color-primary);
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.add-date-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  height: 36px;
+  white-space: nowrap;
+}
+
+.add-date-btn:hover:not(:disabled) {
+  background: var(--accent-light);
+}
+
+.add-date-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Selected dates */
+.selected-dates-container {
+  margin-top: 15px;
+}
+
+.selected-dates-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.date-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  padding: 6px 10px 6px 12px;
+  border: 1px solid var(--border-color);
+  font-size: 0.85rem;
+  color: var(--color-primary);
+  max-width: 280px;
+}
+
+.date-chip-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.date-chip-icon {
+  color: var(--accent-color);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.date-arrow {
+  color: var(--color-secondary);
+  font-size: 0.8rem;
+  margin: 0 2px;
+}
+
+.remove-date-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--bg-tertiary);
+  color: var(--color-secondary);
+  font-size: 0.7rem;
+  padding: 0;
+  margin-left: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.remove-date-btn:hover {
+  background: var(--danger-color);
+  color: white;
+}
+
+.no-dates-message {
+  color: var(--color-secondary);
+  font-size: 0.9rem;
+  font-style: italic;
+  padding: 10px;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  text-align: center;
+}
+
+/* Calendar container styles */
+.date-calendar-container {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 10px;
+  width: 400px; /* Smaller width */
+}
+
+.calendar-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Selected date display for single date mode */
+.selected-date-display {
+  background: var(--bg-secondary);
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 15px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.selected-date-display .date-value {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--accent-color);
+}
+
+/* Calendar Toggle Button */
+.date-type-selector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.date-picker-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--color-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  margin-left: auto;
+}
+
+.date-picker-toggle-btn:hover {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+/* More compact calendar container */
+.date-calendar-container {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 15px;
+  max-width: 320px; /* Make it more compact */
+}
+
+/* Make the Modern DateRangePicker more compact */
+.modern-date-range-picker {
+  width: 100%;
+  max-width: 260px; /* Smaller width */
+  padding: 0.6rem;
+}
+
+.calendar-header {
+  margin-bottom: 0.4rem;
+}
+
+.month-year-display {
+  font-size: 0.9rem; /* Smaller font */
+}
+
+.month-nav-btn {
+  width: 24px; /* Smaller buttons */
+  height: 24px;
+}
+
+.weekday-header div {
+  font-size: 0.65rem;
+  padding-bottom: 0.3rem;
+}
+
+.calendar-days-grid {
+  gap: 0px;
+}
+
+.calendar-day {
+  height: 24px; /* Much smaller day cells */
+}
+
+.calendar-day .day-number {
+  width: 22px;
+  height: 22px;
+  font-size: 0.7rem;
+}
+
+.selection-status {
+  font-size: 0.75rem;
+  padding: 6px 8px;
+  margin-bottom: 0.5rem;
+}
+
+.selected-range-display {
+  padding: 6px;
+  margin-bottom: 0.5rem;
+  font-size: 0.7rem;
+}
+
+.date-label {
+  font-size: 0.65rem;
+}
+
+.date-value {
+  font-size: 0.75rem;
+}
+
+.range-duration {
+  font-size: 0.7rem;
+  padding: 3px 6px;
+  margin-bottom: 0.5rem;
+}
+
+.date-range-tip {
+  display: none; /* Remove the tip to save space */
+}
+
+.calendar-actions {
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.add-date-btn {
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  height: 28px;
+}
+
+/* Make the date calendar container significantly smaller */
+.date-calendar-container {
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  padding: 5px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 8px;
+  max-width: 210px; /* Much smaller width */
+}
+
+/* Make the Modern DateRangePicker extremely compact */
+.modern-date-range-picker {
+  width: 100%;
+  max-width: 210px; /* Much smaller width */
+  padding: 0.3rem;
+}
+
+.calendar-header {
+  margin-bottom: 0.2rem;
+}
+
+.month-year-display {
+  font-size: 0.75rem; /* Smaller font */
+}
+
+.month-nav-btn {
+  width: 18px; /* Tiny buttons */
+  height: 18px;
+  font-size: 0.6rem;
+}
+
+.weekday-header div {
+  font-size: 0.55rem;
+  padding-bottom: 0.2rem;
+}
+
+.calendar-days-grid {
+  gap: 0;
+}
+
+.calendar-day {
+  height: 18px; /* Extremely small day cells */
+}
+
+.calendar-day .day-number {
+  width: 16px;
+  height: 16px;
+  font-size: 0.6rem;
+}
+
+.selection-status {
+  font-size: 0.65rem;
+  padding: 4px 6px;
+  margin-bottom: 0.3rem;
+}
+
+.selected-range-display {
+  padding: 4px;
+  margin-bottom: 0.3rem;
+  font-size: 0.6rem;
+}
+
+.date-label {
+  font-size: 0.55rem;
+}
+
+.date-value {
+  font-size: 0.65rem;
+}
+
+.range-duration {
+  font-size: 0.6rem;
+  padding: 2px 4px;
+  margin-bottom: 0.3rem;
+}
+
+.calendar-actions {
+  margin-top: 5px;
+  padding-top: 5px;
+}
+
+.add-date-btn {
+  padding: 4px 6px;
+  font-size: 0.65rem;
+  height: 22px;
+}
+
+/* Make the date calendar container wider but shorter */
+.date-calendar-container {
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  padding: 5px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 8px;
+  max-width: 300px; /* Wider width */
+}
+
+/* Make the DateRangePicker wider but shorter */
+.modern-date-range-picker {
+  width: 100%;
+  max-width: 300px; /* Wider width */
+  padding: 0.2rem 0.4rem;
+}
+
+.calendar-header {
+  margin-bottom: 0.1rem;
+}
+
+.month-year-display {
+  font-size: 0.7rem;
+}
+
+.month-nav-btn {
+  width: 16px;
+  height: 16px;
+  font-size: 0.5rem;
+}
+
+.weekday-header div {
+  font-size: 0.5rem;
+  padding-bottom: 0.1rem;
+}
+
+.calendar-days-grid {
+  gap: 0;
+}
+
+.calendar-day {
+  height: 14px; /* Even shorter day cells */
+}
+
+.calendar-day .day-number {
+  width: 14px;
+  height: 14px;
+  font-size: 0.5rem;
+}
+
+.selection-status {
+  font-size: 0.6rem;
+  padding: 3px 6px;
+  margin-bottom: 0.2rem;
+}
+
+.selected-range-display {
+  padding: 3px;
+  margin-bottom: 0.2rem;
+  font-size: 0.55rem;
+}
+
+.date-label {
+  font-size: 0.5rem;
+}
+
+.date-value {
+  font-size: 0.55rem;
+}
+
+.range-duration {
+  font-size: 0.55rem;
+  padding: 1px 3px;
+  margin-bottom: 0.2rem;
+}
+
+.calendar-actions {
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
+.add-date-btn {
+  padding: 3px 5px;
+  font-size: 0.6rem;
+  height: 18px;
+}
+
+/* Set a strict max-height on the date calendar container while making it wider */
+.date-calendar-container {
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  padding: 5px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 8px;
+  max-width: 400px; /* Even wider width */
+  max-height: 280px; /* Strict maximum height */
+  overflow: hidden; /* Prevent content from exceeding container */
+}
+
+/* Make the DateRangePicker wider but constrained in height */
+.modern-date-range-picker {
+  width: 100%;
+  max-width: 400px; /* Match container width */
+  padding: 0.2rem 0.4rem;
+  max-height: 270px; /* Slightly less than container to account for padding */
+  overflow: auto; /* Add scrolling if needed */
+}
+
+/* Make the calendar grid more compact vertically */
+.calendar-days-grid {
+  gap: 0;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  max-height: 110px; /* Limit height of calendar grid */
+}
+
+.calendar-day {
+  height: 14px; /* Very short day cells */
+  min-height: 14px; /* Ensure consistent height */
+}
+
+/* Reduce vertical space used by other elements */
+.calendar-header {
+  margin-bottom: 0.1rem;
+  height: 20px;
+}
+
+.selection-status {
+  margin-bottom: 0.1rem;
+  padding: 2px 6px;
+  height: 20px;
+}
+
+.weekday-header {
+  height: 16px;
+  margin-bottom: 2px;
+}
+
+.weekday-header div {
+  padding-bottom: 0;
+}
+
+/* Optional: Hide some elements to save vertical space */
+.date-range-tip {
+  display: none;
+}
+
+/* Make the range display more compact */
+.selected-range-display {
+  padding: 3px;
+  margin-bottom: 0.1rem;
+  height: 30px;
+}
+
+.calendar-actions {
+  margin-top: 3px;
+  padding-top: 3px;
+  height: 24px;
+}
+
+/* Clean date calendar container - normal size with no overflow */
+.date-calendar-container {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 10px;
+  width: 350px; /* Standard width for date pickers */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Reset DateRangePicker to normal proportions */
+.modern-date-range-picker {
+  width: 100%;
+  padding: 0;
+}
+
+/* Normal-sized calendar elements */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  height: auto;
+}
+
+.month-year-display {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.month-nav-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+}
+
+.weekday-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 5px;
+  height: auto;
+}
+
+.weekday-header div {
+  font-size: 0.7rem;
+  color: var(--color-secondary);
+  padding: 3px 0;
+}
+
+/* Calendar grid - standard size */
+.calendar-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 10px;
+  height: auto;
+}
+
+.calendar-day {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-day .day-number {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  border-radius: 50%;
+}
+
+/* Hide unnecessary elements to save space */
+.selection-status, .date-range-tip {
+  display: none;
+}
+
+/* Compact range display */
+.selected-range-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  margin-bottom: 10px;
+  height: auto;
+}
+
+.range-arrow {
+  color: var(--color-secondary);
+}
+
+.range-duration {
+  text-align: center;
+  font-size: 0.75rem;
+  margin-bottom: 10px;
+  height: auto;
+  color: var(--color-secondary);
+}
+
+/* Action buttons */
+.calendar-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 5px;
+  height: auto;
+  border-top: 1px solid var(--border-color);
+  padding-top: 10px;
+}
+
+.add-date-btn {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  height: auto;
+}
+
+/* Clean up duplicated styles and make a wider but compact date picker */
+.date-calendar-container {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 10px;
+  width: 380px; /* Wider width */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: visible; /* No scrolling */
+  max-height: none; /* Remove height restriction */
+}
+
+.modern-date-range-picker {
+  width: 100%;
+  padding: 0;
+  max-height: none; /* Remove height restriction */
+  overflow: visible; /* No scrolling */
+}
+
+/* Smaller calendar elements to fit in the space */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  height: auto;
+}
+
+.month-year-display {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.month-nav-btn {
+  width: 20px;
+  height: 20px;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+}
+
+.weekday-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 3px;
+  height: auto;
+}
+
+.weekday-header div {
+  font-size: 0.65rem;
+  color: var(--color-secondary);
+  padding: 2px 0;
+}
+
+/* Smaller calendar grid */
+.calendar-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  margin-bottom: 6px;
+  height: auto;
+  max-height: none; /* Remove height restriction */
+}
+
+.calendar-day {
+  height: 22px; /* Smaller day cells */
+  min-height: 0; /* Allow for natural sizing */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-day .day-number {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  border-radius: 50%;
+}
+
+/* Hide selection status and tip */
+.selection-status, .date-range-tip {
+  display: none;
+}
+
+/* More compact range display */
+.selected-range-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  height: auto;
+}
+
+.range-arrow {
+  color: var(--color-secondary);
+}
+
+.range-duration {
+  text-align: center;
+  font-size: 0.7rem;
+  margin-bottom: 6px;
+  height: auto;
+  color: var(--color-secondary);
+}
+
+/* Compact action buttons */
+.calendar-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 5px;
+  height: auto;
+  border-top: 1px solid var(--border-color);
+  padding-top: 6px;
+}
+
+.add-date-btn {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  height: auto;
+}
+

@@ -1,0 +1,10 @@
+/* Modal Layout */
+.custom-modal {
+  max-width: 800px;
+  width: 100%;
+}
+
+/* Form Spacing */
+.form-group {
+  margin-block-end: 20px;
+}

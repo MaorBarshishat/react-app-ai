@@ -1,0 +1,151 @@
+/* Style for the main suspicious leads section */
+.suspicious-leads-section {
+    background-color: #2C2F33; /* Dark background */
+    color: #FFFFFF; /* White text for better contrast */
+    padding: 20px;
+    border-radius: 8px;
+    margin: 10px 0;
+  }
+  
+  /* Table container styling */
+  .lead-table-container {
+    overflow-x: auto; /* Allow horizontal scrolling if needed */
+  }
+  
+  /* Style for the leads table */
+  .leads-table {
+    width: 100%;
+    border-collapse: collapse; /* No space between cells */
+    border-radius: 8px;
+    overflow: hidden; /* Ensure rounded corners for the table */
+  }
+  
+  /* Styling for table header */
+  .leads-table thead {
+    background-color: #3A3F43; /* Dark background for header */
+  }
+  
+  .leads-table th {
+    padding: 12px 15px; /* Cell padding */
+    text-align: left; /* Align text to the left */
+    border-bottom: 2px solid #444; /* Divider between header and body */
+    border-right: 1px solid #444; /* Border between columns */
+    color: #FFFFFF; /* White text for header */
+  }
+  
+  /* Style for table body rows */
+  .leads-table tbody tr {
+    transition: background-color 0.3s ease; /* Smooth background change on hover */
+  }
+  
+  .leads-table tbody tr:hover {
+    background-color: #444B52; /* Change color on hover */
+  }
+  
+  /* Individual lead row styling with modern borders */
+  .leads-table tbody tr.lead-row {
+    border-bottom: 1px solid #444; /* Border below each row */
+  }
+  
+  .leads-table tbody td {
+    padding: 10px 15px; /* Cell padding */
+    border-bottom: 1px solid #444; /* Border for each row cell */
+    border-right: 1px solid #444; /* Border between columns */
+    color: #FFFFFF; /* Ensures all text is white */
+  }
+  
+  /* Remove the right border for the last column */
+  .leads-table tbody td:last-child {
+    border-right: none;
+  }
+  
+  /* Lead asset name styling */
+  .lead-asset {
+    font-weight: bold; /* Bold asset names */
+  }
+  
+  /* Active applications list styling */
+  .active-apps-list {
+    display: flex;
+    flex-wrap: wrap; /* Allow tags to wrap */
+  }
+  
+  .app-badge {
+    background-color: #6c757d; /* Soft grey background for app tags */
+    color: #FFFFFF; /* White text */
+    border-radius: 10px; /* Rounded corners for tags */
+    padding: 5px 10px; /* Padding for tags */
+    margin-right: 5px; /* Space between tags */
+    margin-bottom: 5px; /* Space between rows of tags */
+  }
+  
+  /* Journey status indicator icon */
+  .status-indicator {
+    cursor: pointer; /* Cursor indicates clickable status */
+  }
+  
+  /* User journey details row styling */
+  .user-journey-details-row {
+    background-color: #3A3F43; /* Slightly lighter background for journey details */
+  }
+  
+  .journey-details-container {
+    padding: 15px;
+  }
+  
+  /* Journey header styling */
+  .journey-header {
+    display: flex;
+    justify-content: space-between; /* Space between items */
+    align-items: center;
+  }
+  
+  .journey-info {
+    font-size: 0.9em; /* Smaller font for journey info */
+    color: #B0B0B0; /* Light grey color for metadata */
+  }
+  
+  /* Inner journey events table styling */
+  .journey-events-table {
+    width: 100%;
+    border-collapse: collapse; /* No space between cells */
+    margin-top: 10px; /* Space above the table */
+  }
+  
+  .journey-events-table th,
+  .journey-events-table td {
+    padding: 8px 12px; /* Cell padding */
+    color: #FFFFFF; /* White text for better contrast */
+  }
+  
+  .journey-events-table th {
+    background-color: #444B52; /* Header color for journey table */
+  }
+  
+  .journey-events-table tbody tr:nth-child(even) {
+    background-color: #3A3F43; /* Set a background for alternate rows */
+  }
+  
+  /* Add modern border for rows in the journey events table */
+  .journey-events-table tbody tr {
+    border-bottom: 1px solid #444; /* Creates a modern look for rows */
+  }
+  
+  .event-row-even {
+    background-color: #3A3F43; /* Background color for even rows */
+  }
+  .event-row-odd {
+    background-color: transparent; /* Background color for odd rows */
+  }
+  
+  /* Ensuring the last column in the journey events table has no right border */
+  .journey-events-table tbody td:last-child {
+    border-right: none;
+  }
+  
+  /* Adjustments for large datasets to manage overflow gracefully */
+  .leads-table tbody {
+    display: block; /* Makes it possible to control the scrolling */
+    max-height: 400px; /* Set a max height for the body */
+    overflow-y: auto; /* Vertical scrolling if content overflows */
+  }  
