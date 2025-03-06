@@ -1,0 +1,42 @@
+.node-item {
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  cursor: grab;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.node-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.node-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  color: white;
+  font-size: 14px;
+}
+
+.node-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.node-item:active {
+  cursor: grabbing;
+  transform: scale(0.98);
+} 

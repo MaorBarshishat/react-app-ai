@@ -23,8 +23,8 @@ const App: React.FC = () => {
         return (
           <ReactFlowProvider>
             <DnDProvider>
+              <Policies />
               <DnDFlow />
-              <Sidebar />
             </DnDProvider>
           </ReactFlowProvider>
         );

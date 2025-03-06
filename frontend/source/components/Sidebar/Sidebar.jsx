@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FaSignal, FaSearch, FaGavel } from 'react-icons/fa';
-import Policies from './Policies';
+import Policies from '../Sections/Policies';
 import Investigations from './Investigations';
 import '../../styles/Sidebar.css';
 
