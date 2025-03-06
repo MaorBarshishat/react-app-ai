@@ -2,7 +2,6 @@ import React, { useState, useContext, useRef, useEffect } from 'react';
 import { FaFolder, FaFolderOpen, FaFile, FaPlus, FaDownload, FaTrash, FaEllipsisH, FaCalendarAlt, FaServer, FaGlobe, FaPencilAlt, FaSave, FaTimes, FaSearch, FaChevronDown, FaChevronUp, FaEdit, FaArrowLeft, FaChevronRight, FaArrowRight, FaCalendarDay } from 'react-icons/fa';
 import { ThemeContext } from '../../context/ThemeContext';
 import '../../styles/Investigations.css';
-import SuspiciousLeads from '../modals/ShowResults';
 import { format } from 'date-fns';
 import CustomDateRangePicker from '../DateRangePicker/DateRangePicker';
 
@@ -973,7 +972,7 @@ const Investigations: React.FC = () => {
   // Handle folder actions (ellipsis menu)
   const handleFolderActions = (e: React.MouseEvent, folderId: string) => {
     e.stopPropagation();
-    
+    console.log('Folder action clicked:', folderId);
     // Close any other open menus
     setShowFileMenu({ show: false });
     setShowNewItemMenu({ show: false });
@@ -987,11 +986,12 @@ const Investigations: React.FC = () => {
     
     // Position menu relative to the button
     setMenuPosition({
-      top: rect.bottom + window.scrollY,
+      top: rect.bottom + window.scrollY - 60 ,
       left: rect.left + window.scrollX - 150 // Offset to align menu with button
     });
-    
     setOverlayVisible(true);
+    console.log('Menu position:', { top: rect.bottom, left: rect.left });
+
   };
 
   // Handle file actions (ellipsis menu)
@@ -1006,7 +1006,7 @@ const Investigations: React.FC = () => {
     
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     console.log('Menu position:', { top: rect.bottom, left: rect.left });
-    
+    console.log(!showFileMenu.show || showFileMenu.fileId !== fileId);
     setShowFileMenu({
       show: !showFileMenu.show || showFileMenu.fileId !== fileId,
       fileId
@@ -1014,8 +1014,8 @@ const Investigations: React.FC = () => {
     
     // Position menu relative to the button
     setMenuPosition({
-      top: rect.bottom + window.scrollY,
-      left: rect.left + window.scrollX - 100 // Adjust to ensure it's visible
+      top: rect.bottom + window.scrollY - 70,
+      left: rect.left + window.scrollX // Adjust to ensure it's visible
     });
     
     setOverlayVisible(true);
@@ -1036,7 +1036,7 @@ const Investigations: React.FC = () => {
     });
     
     setMenuPosition({
-      top: buttonRect.bottom + window.scrollY, 
+      top: buttonRect.bottom + window.scrollY , 
       left: buttonRect.left + window.scrollX 
     });
     
@@ -1208,7 +1208,7 @@ const Investigations: React.FC = () => {
   // Effect to handle clicks outside menus
   useEffect(() => {
     const handleClickOutside = () => {
-      if (showFolderMenu.show || showFileMenu.show || showNewItemMenu.show) {
+      if (showFolderMenu.show && showFileMenu.show && showNewItemMenu.show) {
         setShowFolderMenu({ show: false });
         setShowFileMenu({ show: false });
         setShowNewItemMenu({ show: false });
@@ -1380,30 +1380,24 @@ const Investigations: React.FC = () => {
     setOverlayVisible(false);
   };
 
-  // Improved delete function
-  const deleteItem = (e: React.MouseEvent, itemId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
+  // Updated deleteItem function
+  const deleteItem = (itemId: string) => {
     console.log(`Deleting item ${itemId}`); // Debugging
     
-    if (window.confirm('Are you sure you want to delete this item?')) {
+    if (window.confirm(`Are you sure you want to delete?`)) {
       // Remove the item from the folder structure
       setFolderData(prev => {
         // Function to recursively delete from folder structure
-        const removeItem = (items: (InvestigationFolder | InvestigationFile)[]) => {
+        const removeItem = (items: (InvestigationFolder | InvestigationFile)[]): (InvestigationFolder | InvestigationFile)[] => {
           return items.filter(item => {
             // Skip this item if it's the one to delete
             if (item.id === itemId) return false;
             
             // If it's a folder, check its children
             if (item.type === 'folder') {
-              return {
-                ...item,
-                children: removeItem((item as InvestigationFolder).children)
-              };
+              item.children = removeItem(item.children);
             }
-            return item;
+            return true;
           });
         };
         
@@ -2420,7 +2414,7 @@ const Investigations: React.FC = () => {
         <button 
           className="menu-item create-folder-btn"
           onClick={(e) => {
-    e.stopPropagation();
+            e.stopPropagation();
             handleNewFolder(parentId || null);
             setShowNewItemMenu({ show: false });
           }}
@@ -2443,35 +2437,25 @@ const Investigations: React.FC = () => {
 
   // Improved function to handle creating a new folder
   const handleNewFolder = (parentId: string | null) => {
+    console.log('Creating new folder with parentId:', parentId);
     const folderName = prompt('Enter folder name:');
     if (!folderName || folderName.trim() === '') return;
     
-    // Create a new folder ID
     const newFolderId = `folder-${Date.now()}`;
-    
+    const newFolder: InvestigationFolder = {
+      id: newFolderId,
+      name: folderName.trim(),
+      type: 'folder',
+      children: [],
+      isOpen: false
+    };
+    console.log('New folder:', newFolder);
     if (parentId === null) {
-      // Adding a root folder
-      setFolderData(prevFolders => [
-        ...prevFolders,
-        {
-          id: newFolderId,
-          name: folderName.trim(),
-          type: 'folder',
-          isOpen: false,
-          children: []
-        }
-      ]);
+      // Add as a root folder
+      setFolderData(prevFolders => [...prevFolders, newFolder]);
     } else {
-      // Adding a child folder
-      setFolderData(prevFolders => {
-        return updateFolderTreeWithNewItem(prevFolders, parentId, {
-          id: newFolderId,
-          name: folderName.trim(),
-          type: 'folder',
-          isOpen: false,
-          children: []
-        });
-      });
+      // Add as a child folder
+      setFolderData(prevFolders => updateFolderTreeWithNewItem(prevFolders, parentId, newFolder));
     }
   };
 
@@ -2551,22 +2535,323 @@ const Investigations: React.FC = () => {
     }
   };
 
+  // Add this helper function to update a file in the folder structure
+  const updateFileInFolderStructure = (
+    folders: InvestigationFolder[],
+    fileId: string,
+    updatedFile: InvestigationFile
+  ): InvestigationFolder[] => {
+    return folders.map(folder => {
+      // Check if the file is directly in this folder
+      const fileIndex = folder.children.findIndex(child => 
+        child.type === 'file' && child.id === fileId
+      );
+      
+      if (fileIndex !== -1) {
+        // File found, update it
+        const updatedChildren = [...folder.children];
+        updatedChildren[fileIndex] = updatedFile;
+        return { ...folder, children: updatedChildren };
+      }
+      
+      // Check in subfolders
+      if (folder.children.some(child => child.type === 'folder')) {
+        return {
+          ...folder,
+          children: [
+            ...folder.children.filter(child => child.type === 'file'),
+            ...updateFileInFolderStructure(
+              folder.children.filter(child => child.type === 'folder') as InvestigationFolder[],
+              fileId,
+              updatedFile
+            )
+          ]
+        };
+      }
+      
+      return folder;
+    });
+  };
+
+  // Helper function to find a folder by ID
+  const findFolderById = (folderId: string): InvestigationFolder | null => {
+    // Function to search recursively through the folder structure
+    const searchInFolders = (folders: InvestigationFolder[]): InvestigationFolder | null => {
+      for (const folder of folders) {
+        if (folder.id === folderId) {
+          return folder;
+        }
+        
+        // Search in subfolders
+        const subfolders = folder.children.filter(child => child.type === 'folder') as InvestigationFolder[];
+        if (subfolders.length > 0) {
+          const found = searchInFolders(subfolders);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    
+    return searchInFolders(folderData);
+  };
+
+  // Helper function to update a folder name
+  const updateFolderName = (
+    folders: InvestigationFolder[],
+    folderId: string,
+    newName: string
+  ): InvestigationFolder[] => {
+    return folders.map(folder => {
+      if (folder.id === folderId) {
+        return { ...folder, name: newName };
+      }
+      
+      // Check in subfolders
+      if (folder.children.some(child => child.type === 'folder')) {
+        return {
+          ...folder,
+          children: [
+            ...folder.children.filter(child => child.type === 'file'),
+            ...updateFolderName(
+              folder.children.filter(child => child.type === 'folder') as InvestigationFolder[],
+              folderId,
+              newName
+            )
+          ]
+        };
+      }
+      
+      return folder;
+    });
+  };
+
+  // Function to rename an item
+  const renameItem = (itemId: string, newName: string) => {
+    setFolderData(prevFolders => {
+      const updateItemName = (items: (InvestigationFolder | InvestigationFile)[]): (InvestigationFolder | InvestigationFile)[] => {
+        return items.map(item => {
+          if (item.id === itemId) {
+            return { ...item, name: newName };
+          }
+          if (item.type === 'folder') {
+            item.children = updateItemName(item.children);
+          }
+          return item;
+        });
+      };
+      return updateItemName(prevFolders);
+    });
+  };
+
+  // Fix the handleEllipsis function for file menu
+  const handleEllipsis = (e: React.MouseEvent, item: InvestigationItem) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    console.log("Ellipsis clicked for:", item.id); // Debug
+    
+    // Set menu position relative to the clicked element
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setMenuPosition({
+      top: rect.bottom + window.scrollY - 60,
+      left: rect.left + window.scrollX - 150
+    });
+    
+    // Show the appropriate menu based on item type
+    if (item.type === 'folder') {
+      setShowFolderMenu({ show: true, folderId: item.id });
+      setShowFileMenu({ show: false });
+    } else {
+      setShowFileMenu({ show: true, fileId: item.id });
+      setShowFolderMenu({ show: false });
+    }
+    
+    setOverlayVisible(true);
+  };
+
+  // Fix the renderFileItem function to properly attach the ellipsis handler
+  const renderFileItem = (file: InvestigationFile) => {
+    return (
+      <div 
+        key={file.id}
+        className={`file-item ${selectedItem?.id === file.id ? 'selected' : ''}`}
+        onClick={() => selectFile(file)}
+      >
+        <div className="file-content">
+          <FaFile className="file-icon" />
+          <span className="file-name">{file.name}</span>
+        </div>
+        <button 
+          className="action-button"
+          onClick={(e) => handleEllipsis(e, file)}
+        >
+          <FaEllipsisH />
+        </button>
+      </div>
+    );
+  };
+
+  // Function to handle creating a new investigation
+  const handleNewInvestigation = (parentId: string | null) => {
+    const fileName = prompt('Enter investigation name:');
+    if (!fileName || fileName.trim() === '') return;
+    
+    console.log('Creating new investigation with parentId:', parentId);
+
+    const newFileId = `file-${Date.now()}`;
+    const newFile: InvestigationFile = {
+      id: newFileId,
+      name: fileName.trim(),
+      type: 'file',
+      status: 'open',
+      severity: 'medium',
+      dateCreated: new Date().toISOString().split('T')[0],
+      dates: [],
+      assets: [],
+      domains: [],
+      description: '',
+      assignedTo: ''
+    };
+
+    console.log('New investigation file:', newFile);
+
+    if (parentId === null) {
+      // Add to the first root folder
+      if (folderData.length > 0) {
+        setFolderData(prevFolders => {
+          const firstFolder = prevFolders[0];
+          return [
+            {
+              ...firstFolder,
+              isOpen: true,
+              children: [...firstFolder.children, newFile]
+            },
+            ...prevFolders.slice(1)
+          ];
+        });
+      } else {
+        // Create a new root folder if none exists
+        const newFolder: InvestigationFolder = {
+          id: `folder-${Date.now()}`,
+          name: 'Investigations',
+          type: 'folder',
+          children: [newFile],
+          isOpen: true
+        };
+        setFolderData([newFolder]);
+      }
+    } else {
+      // Add to specified folder
+      setFolderData(prevFolders => updateFolderTreeWithNewItem(prevFolders, parentId, newFile));
+    }
+    
+    // Optionally select the new file
+    setSelectedItem(newFile);
+  };
+
+  // File action menu
+  {showFileMenu.show && (
+    <div 
+      className="action-menu"
+      style={{ 
+        top: `${menuPosition.top}px`, 
+        left: `${menuPosition.left}px`,
+        padding: '8px',
+        borderRadius: '4px',
+        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+        zIndex: 1000
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button 
+        className="menu-item"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Rename file button clicked');
+          
+          if (showFileMenu.fileId) {
+            const file = findFileById(showFileMenu.fileId);
+            if (file) {
+              const newName = prompt("Enter new file name:", file.name);
+              if (newName && newName.trim() !== "") {
+                renameItem(showFileMenu.fileId, newName.trim());
+                
+                // If this file is currently selected, update the selected item too
+                if (selectedItem && selectedItem.id === showFileMenu.fileId) {
+                  setSelectedItem({
+                    ...selectedItem,
+                    name: newName.trim()
+                  });
+                }
+              }
+            }
+          }
+          
+          setShowFileMenu({ show: false });
+          setOverlayVisible(false);
+        }}
+      >
+        <FaPencilAlt /> Rename
+      </button>
+      <button 
+        className="menu-item"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Edit file button clicked');
+          
+          if (showFileMenu.fileId) {
+            const file = findFileById(showFileMenu.fileId);
+            if (file) {
+              startEditing(file);
+            }
+          }
+          
+          setShowFileMenu({ show: false });
+          setOverlayVisible(false);
+        }}
+      >
+        <FaEdit /> Edit
+      </button>
+      <button 
+        className="menu-item delete-action"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Delete file button clicked');
+          
+          if (showFileMenu.fileId) {
+              deleteItem(showFileMenu.fileId);
+          }
+          
+          setShowFileMenu({ show: false });
+          setOverlayVisible(false);
+        }}
+      >
+        <FaTrash /> Delete
+      </button>
+    </div>
+  )}
+
   return (
     <div className="investigations-container">
-      
       {/* Overlay for closing menus */}
       {overlayVisible && (
         <div 
           className="menu-overlay" 
-          onClick={() => {
-            setShowFolderMenu({ show: false });
-            setShowFileMenu({ show: false });
-            setShowNewItemMenu({ show: false });
-            setOverlayVisible(false);
+          onClick={(e) => {
+            // Only close menus if clicking directly on the overlay (not on menus or buttons)
+            if (e.target === e.currentTarget) {
+              setShowFolderMenu({ show: false });
+              setShowFileMenu({ show: false });
+              setShowNewItemMenu({ show: false });
+              setOverlayVisible(false);
+            }
           }}
         />
       )}
-      
+
       {/* Folder action menu */}
       {showFolderMenu.show && (
         <div 
@@ -2576,43 +2861,39 @@ const Investigations: React.FC = () => {
             left: `${menuPosition.left}px`,
             padding: '8px',
             borderRadius: '4px',
-            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+            zIndex: 1000
           }}
-          onClick={e => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         >
           <button 
             className="menu-item"
-            style={{
-              display: 'block',
-              width: '100%',
-              textAlign: 'left',
-              padding: '8px 12px',
-              margin: '4px 0',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              transition: 'transform 0.2s'
-            }}
             onClick={(e) => {
               e.preventDefault();
-            e.stopPropagation();
-              const folder = folderData.find(f => f.id === showFolderMenu.folderId);
-              if (folder && folder.type === 'folder') {
-              startRenaming(e, folder);
-            }
+              e.stopPropagation();
+              console.log('Rename folder button clicked'); 
+
+              if (showFolderMenu.folderId) {
+                const newName = prompt("Enter new folder name:");
+                if (newName && newName.trim() !== "") {
+                  renameItem(showFolderMenu.folderId, newName.trim());
+                }
+              }
               setShowFolderMenu({ show: false });
               setOverlayVisible(false);
             }}
           >
-            <FaEdit /> Rename
+            <FaPencilAlt /> Rename
           </button>
           <button 
             className="menu-item"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              console.log('Create new folder button clicked:', showFolderMenu.folderId);
+
               if (showFolderMenu.folderId) {
-                handleAddSubItem(e, showFolderMenu.folderId, 'folder');
+                handleNewFolder(showFolderMenu.folderId);
               }
               setShowFolderMenu({ show: false });
               setOverlayVisible(false);
@@ -2625,8 +2906,10 @@ const Investigations: React.FC = () => {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              console.log('Create new investigation button clicked');
+              
               if (showFolderMenu.folderId) {
-                handleAddSubItem(e, showFolderMenu.folderId, 'file');
+                handleNewInvestigation(showFolderMenu.folderId);
               }
               setShowFolderMenu({ show: false });
               setOverlayVisible(false);
@@ -2636,22 +2919,24 @@ const Investigations: React.FC = () => {
           </button>
           <button 
             className="menu-item delete-action"
-            onClick={(e) => {
+            onClick={(e) => { 
               e.preventDefault();
               e.stopPropagation();
+              console.log('Delete folder button clicked');
+
               if (showFolderMenu.folderId) {
-                deleteItem(e, showFolderMenu.folderId);
+                deleteItem(showFolderMenu.folderId);
               }
               setShowFolderMenu({ show: false });
               setOverlayVisible(false);
             }}
           >
             <FaTrash /> Delete
-          </button>
+          </button>handle
         </div>
       )}
-      
-      {/* File action menu */}
+
+      {/* File action menu - Add this inside the return statement */}
       {showFileMenu.show && (
         <div 
           className="action-menu"
@@ -2660,19 +2945,56 @@ const Investigations: React.FC = () => {
             left: `${menuPosition.left}px`,
             padding: '8px',
             borderRadius: '4px',
-            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+            zIndex: 1000
           }}
-          onClick={e => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         >
           <button 
             className="menu-item"
             onClick={(e) => {
               e.preventDefault();
-            e.stopPropagation();
-              const file = findFileById(showFileMenu.fileId!);
-            if (file) {
-              startEditing(file);
-            }
+              e.stopPropagation();
+              console.log('Rename file button clicked');
+              
+              if (showFileMenu.fileId) {
+                const file = findFileById(showFileMenu.fileId);
+                if (file) {
+                  const newName = prompt("Enter new file name:", file.name);
+                  if (newName && newName.trim() !== "") {
+                    renameItem(showFileMenu.fileId, newName.trim());
+                    
+                    // If this file is currently selected, update the selected item too
+                    if (selectedItem && selectedItem.id === showFileMenu.fileId) {
+                      setSelectedItem({
+                        ...selectedItem,
+                        name: newName.trim()
+                      });
+                    }
+                  }
+                }
+              }
+              
+              setShowFileMenu({ show: false });
+              setOverlayVisible(false);
+            }}
+          >
+            <FaPencilAlt /> Rename
+          </button>
+          <button 
+            className="menu-item"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Edit file button clicked');
+              
+              if (showFileMenu.fileId) {
+                const file = findFileById(showFileMenu.fileId);
+                if (file) {
+                  startEditing(file);
+                }
+              }
+              
               setShowFileMenu({ show: false });
               setOverlayVisible(false);
             }}
@@ -2680,28 +3002,16 @@ const Investigations: React.FC = () => {
             <FaEdit /> Edit
           </button>
           <button 
-            className="menu-item"
-            onClick={(e) => {
-              e.preventDefault();
-            e.stopPropagation();
-              const file = findFileById(showFileMenu.fileId!);
-            if (file) {
-                handleInvestigateClick();
-            }
-              setShowFileMenu({ show: false });
-              setOverlayVisible(false);
-            }}
-          >
-            <FaSearch /> Investigate
-          </button>
-          <button 
             className="menu-item delete-action"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              console.log('Delete file button clicked');
+              
               if (showFileMenu.fileId) {
-                deleteItem(e, showFileMenu.fileId);
+                  deleteItem(showFileMenu.fileId);
               }
+              
               setShowFileMenu({ show: false });
               setOverlayVisible(false);
             }}
@@ -2710,7 +3020,48 @@ const Investigations: React.FC = () => {
           </button>
         </div>
       )}
-      
+
+      {/* New item menu */}
+      {showNewItemMenu.show && (
+        <div 
+          className="action-menu new-item-menu"
+          style={{ 
+            top: `27%`, 
+            left: `13%`,
+            padding: '8px',
+            borderRadius: '4px',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+            zIndex: 1000
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          <button 
+            className="menu-item"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleNewFolder(null);
+              setShowNewItemMenu({ show: false });
+              setOverlayVisible(false);
+            }}
+          >
+            <FaFolder /> New Folder
+          </button>
+          <button 
+            className="menu-item"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleNewInvestigation(null);
+              setShowNewItemMenu({ show: false });
+              setOverlayVisible(false);
+            }}
+          >
+            <FaFile /> New Investigation
+          </button>
+        </div>
+      )}
+
       <div className="investigations-header">
         <h1>Investigations</h1>
         <p>Track and manage security incident investigations</p>
@@ -2726,8 +3077,8 @@ const Investigations: React.FC = () => {
                 e.stopPropagation();
                 setShowNewItemMenu({ 
                   show: true, 
-                  parentId: null 
                 });
+                setOverlayVisible(true);
               }}
             >
               <FaPlus />
@@ -2742,23 +3093,6 @@ const Investigations: React.FC = () => {
           {renderItemDetails()}
         </div>
       </div>
-      
-      {/* New item menu */}
-      {showNewItemMenu.show && (
-        <div 
-          className="action-menu new-item-menu"
-          style={{ 
-            top: `${menuPosition.top}px`, 
-            left: `${menuPosition.left}px`,
-            padding: '8px',
-            borderRadius: '4px',
-            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
-          }}
-          onClick={e => e.stopPropagation()}
-        >
-          {renderNewItemMenu(showNewItemMenu.parentId)}
-        </div>
-      )}
 
       {/* Add inline styles to fix the CSS issues */}
       <style>{`
@@ -2834,15 +3168,31 @@ const Investigations: React.FC = () => {
           color: #d9534f;
         }
       `}</style>
-
-      {isInvestigating && (
-        <div className="loading-overlay">
-          <div className="loading-spinner">
-            <div className="spinner"></div>
-            <p>Analyzing data...</p>
-          </div>
-        </div>
-      )}
+      <style>{`
+        .menu-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 900;
+          background-color: transparent;
+        }
+        
+        .action-menu {
+          position: absolute;
+          z-index: 1000 !important;
+          background-color: ${darkMode ? '#2a2a2a' : 'white'};
+          border: 1px solid ${darkMode ? '#444' : '#ddd'};
+        }
+        
+        .menu-item {
+          position: relative;
+          z-index: 1001 !important;
+          cursor: pointer !important;
+          pointer-events: auto !important;
+        }
+      `}</style>
     </div>
   );
 };

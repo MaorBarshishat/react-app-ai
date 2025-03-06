@@ -958,19 +958,6 @@
   color: white;
 }
 
-/* Action menu improvements */
-.action-menu {
-  position: fixed;
-  right: auto;
-  top: auto;
-  background: black;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  width: 180px;
-  border: 1px solid var(--border-color);
-  overflow: hidden;
-}
 
 .menu-item {
   padding: 0.6rem 1rem;
@@ -1825,13 +1812,6 @@
   border-color: var(--accent-color);
   outline: none;
   box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15);
-}
-
-/* Enhance action menu */
-.action-menu {
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
 }
 
 .menu-item {
