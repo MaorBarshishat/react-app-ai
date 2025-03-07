@@ -973,25 +973,36 @@ const Investigations: React.FC = () => {
   const handleFolderActions = (e: React.MouseEvent, folderId: string) => {
     e.stopPropagation();
     console.log('Folder action clicked:', folderId);
+    
     // Close any other open menus
     setShowFileMenu({ show: false });
     setShowNewItemMenu({ show: false });
     
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    
+    // Toggle menu for this folder
     setShowFolderMenu({
       show: !showFolderMenu.show || showFolderMenu.folderId !== folderId,
       folderId
     });
     
-    // Position menu relative to the button
-    setMenuPosition({
-      top: rect.bottom + window.scrollY - 60 ,
-      left: rect.left + window.scrollX - 150 // Offset to align menu with button
-    });
+    // Use a class-based approach for positioning instead of fixed coordinates
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const parentRect = (e.currentTarget.closest('.folder-sidebar') as HTMLElement)?.getBoundingClientRect();
+    
+    if (parentRect) {
+      // Calculate position relative to parent container
+      setMenuPosition({
+        top: (rect.bottom - parentRect.top) / parentRect.height * 100,
+        left: (rect.left - parentRect.left) / parentRect.width * 100
+      });
+    } else {
+      // Fallback if parent not found
+      setMenuPosition({
+        top: rect.bottom / window.innerHeight * 100,
+        left: rect.left / window.innerWidth * 100
+      });
+    }
+    
     setOverlayVisible(true);
-    console.log('Menu position:', { top: rect.bottom, left: rect.left });
-
   };
 
   // Handle file actions (ellipsis menu)
@@ -2834,6 +2845,88 @@ const Investigations: React.FC = () => {
     </div>
   )}
 
+  // Add this effect to load saved data when component mounts
+  useEffect(() => {
+    // Load saved investigation data from localStorage
+    const loadSavedData = () => {
+      try {
+        const savedFolderData = localStorage.getItem('investigationFolderData');
+        const savedSelectedItemId = localStorage.getItem('investigationSelectedItemId');
+        
+        if (savedFolderData) {
+          const parsedData = JSON.parse(savedFolderData);
+          setFolderData(parsedData);
+          console.log('Loaded saved folder data');
+        }
+        
+        if (savedSelectedItemId && savedFolderData) {
+          // Find item directly without setTimeout
+          const parsedData = JSON.parse(savedFolderData);
+          const findItemById = (id: string, items: (InvestigationFolder | InvestigationFile)[]): InvestigationItem | null => {
+            for (const item of items) {
+              if (item.id === id) return item;
+              if (item.type === 'folder') {
+                const foundInChildren = findItemById(id, (item as InvestigationFolder).children);
+                if (foundInChildren) return foundInChildren;
+              }
+            }
+            return null;
+          };
+          
+          const foundItem = findItemById(savedSelectedItemId, parsedData);
+          if (foundItem) {
+            setSelectedItem(foundItem);
+            console.log('Restored selected item');
+          }
+        }
+      } catch (error) {
+        console.error('Error loading saved investigation data:', error);
+      }
+    };
+    
+    loadSavedData();
+  }, []);
+
+  // Add this effect to save data when it changes
+  useEffect(() => {
+    // Save folder data to localStorage whenever it changes
+    if (folderData.length > 0) {
+      localStorage.setItem('investigationFolderData', JSON.stringify(folderData));
+      console.log('Saved folder data to localStorage');
+    }
+  }, [folderData]);
+
+  // Add this effect to save selected item when it changes
+  useEffect(() => {
+    // Save selected item ID to localStorage whenever it changes
+    if (selectedItem) {
+      localStorage.setItem('investigationSelectedItemId', selectedItem.id);
+      console.log('Saved selected item ID:', selectedItem.id);
+    }
+  }, [selectedItem]);
+
+  // Add a function to manually save state (can be called when navigating away)
+  const saveInvestigationsState = () => {
+    localStorage.setItem('investigationFolderData', JSON.stringify(folderData));
+    if (selectedItem) {
+      localStorage.setItem('investigationSelectedItemId', selectedItem.id);
+    }
+    console.log('Manually saved investigation state');
+  };
+
+  // Add this to clean up when component unmounts
+  useEffect(() => {
+    const saveFunction = () => {
+      // Save state one last time when component unmounts
+      localStorage.setItem('investigationFolderData', JSON.stringify(folderData));
+      if (selectedItem) {
+        localStorage.setItem('investigationSelectedItemId', selectedItem.id);
+      }
+    };
+    
+    return saveFunction;
+  }, [folderData, selectedItem]); // These dependencies are correct
+
   return (
     <div className="investigations-container">
       {/* Overlay for closing menus */}
@@ -2857,11 +2950,11 @@ const Investigations: React.FC = () => {
         <div 
           className="action-menu"
           style={{ 
-            top: `${menuPosition.top}px`, 
-            left: `${menuPosition.left}px`,
-            padding: '8px',
-            borderRadius: '4px',
-            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+            top: `${menuPosition.top}%`, 
+            left: `${menuPosition.left}%`,
+            padding: '0.6rem',
+            borderRadius: '0.4rem',
+            boxShadow: '0 0.15rem 0.75rem rgba(0, 0, 0, 0.1)',
             zIndex: 1000
           }}
           onClick={(e) => e.stopPropagation()}
@@ -2932,7 +3025,7 @@ const Investigations: React.FC = () => {
             }}
           >
             <FaTrash /> Delete
-          </button>handle
+          </button>
         </div>
       )}
 
@@ -2941,11 +3034,11 @@ const Investigations: React.FC = () => {
         <div 
           className="action-menu"
           style={{ 
-            top: `${menuPosition.top}px`, 
-            left: `${menuPosition.left}px`,
-            padding: '8px',
-            borderRadius: '4px',
-            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+            top: `${menuPosition.top}%`, 
+            left: `${menuPosition.left}%`,
+            padding: '0.6rem',
+            borderRadius: '0.4rem',
+            boxShadow: '0 0.15rem 0.75rem rgba(0, 0, 0, 0.1)',
             zIndex: 1000
           }}
           onClick={(e) => e.stopPropagation()}

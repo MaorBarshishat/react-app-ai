@@ -7,29 +7,28 @@ import {
   Controls,
   useReactFlow,
   Background,
+  MarkerType
 } from '@xyflow/react';
 import TextNode from './nodes/TextNode'; 
 import FourWayNode from './nodes/FourWayNode';
 import OperatorNode from './nodes/OperatorNode';
 import DefaultNode from './nodes/DefaultNode';
 import { DnDProvider, useDnD } from './nodes/DnDContext';
-import { FaTrash } from 'react-icons/fa'; // Import the trash icon
+import { FaTrash } from 'react-icons/fa';
 import '@xyflow/react/dist/style.css';
-import '../styles/FlowScreen.css'; // Import the new styles
+import '../styles/FlowScreen.css';
 
-const getId = (id) => `dndnode_${id}`; // Use the id directly.
+const getId = (id) => `dndnode_${id}`;
 
 const DnDFlow = () => {
   const reactFlowWrapper = useRef(null);
   
-  // Load nodes and edges from local storage, or use empty arrays if there are none.
   const [nodes, setNodes, onNodesChange] = useNodesState(JSON.parse(localStorage.getItem('nodes')) || []);
   const [edges, setEdges, onEdgesChange] = useEdgesState(JSON.parse(localStorage.getItem('edges')) || []);
   
   const { screenToFlowPosition } = useReactFlow();
   const [type, label, color] = useDnD();
 
-  // Save the nodes and edges to local storage whenever they change
   useEffect(() => {
     localStorage.setItem('nodes', JSON.stringify(nodes));
   }, [nodes]);
@@ -38,16 +37,13 @@ const DnDFlow = () => {
     localStorage.setItem('edges', JSON.stringify(edges));
   }, [edges]);
 
-  // Handle drag over event
   const onDragOver = useCallback((event) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  // Handle drop event to create new nodes
   const onDrop = useCallback((event) => {
     event.preventDefault();
-
     if (!type) return; // Ensure the type is defined before proceeding
 
     const position = screenToFlowPosition({
@@ -56,7 +52,7 @@ const DnDFlow = () => {
     });
 
     const newNode = {
-      id: getId(nodes.length), // You may want a unique ID generation strategy
+      id: getId(nodes.length), // Get unique ID for the node
       type,
       color,
       position,
@@ -69,15 +65,56 @@ const DnDFlow = () => {
     setNodes((nds) => nds.concat(newNode)); // Add the new node to state
   }, [screenToFlowPosition, type, label, color, nodes.length, setNodes]);
 
-  // Handle connection events
-  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
+  const onConnect = useCallback((params) => {
+    // Set default color to blue
+   
+    let edgeColor = 'blue';
+    if (params.sourceHandle === 'false') {
+      edgeColor = 'red'; // False exit
+      params.markerEnd = {
+        type: MarkerType.Arrow,
+        width: 20,
+        height: 20,
+        color: 'red',
+      };
+    } else if (params.sourceHandle === 'true') {
+      edgeColor = 'green'; // True exit
+      params.markerEnd = {
+        type: MarkerType.Arrow,
+        width: 20,
+        height: 20,
+        color: 'green',
+      };
+    }
 
-  // Clear all nodes and edges
+    params.style = {
+      stroke: edgeColor,
+      strokeWidth: 1,
+      label: 'marker size and color',
+    };
+
+
+
+    console.log(params);
+    setEdges((eds) => addEdge(params, eds));
+  }, [setEdges]);
+
+  // const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
+
+
+
   const clearScreen = () => {
-    setNodes([]); // Clear nodes
-    setEdges([]); // Clear edges
-    localStorage.removeItem('nodes'); // Clear from local storage
-    localStorage.removeItem('edges'); // Clear from local storage
+    setNodes([]);
+    setEdges([]);
+    localStorage.removeItem('nodes');
+    localStorage.removeItem('edges');
+  };
+
+  const nodeTypes = {
+    text: TextNode,
+    fourWay: FourWayNode,
+    operator: OperatorNode,
+    default: DefaultNode,
   };
 
   return (
@@ -92,12 +129,15 @@ const DnDFlow = () => {
           onConnect={onConnect}
           onDrop={onDrop}
           onDragOver={onDragOver}
+          nodeTypes={nodeTypes}
           fitView
           style={{ backgroundColor: "#F7F9FB" }}
           connectionMode="loose"
         >
+      
+        
           <Controls position='bottom-right'>
-            <button className='react-clear-screen-button' onClick={clearScreen} >
+          <button className='react-clear-screen-button' onClick={clearScreen}>
               <FaTrash /> {/* Adding the trash icon */}
             </button>
           </Controls>

@@ -1,7 +1,6 @@
-
 .policies-container{
 position: fixed;
-  top: 70px;
+  top: 10%;
   left: 0;
   height: 100vh;
   width: 28%;
@@ -12,7 +11,7 @@ position: fixed;
   /* Updated styling for better integration with the flow screen */
   background: linear-gradient(90deg, #252a32 0%, #2c333c 100%);
   color: #ffffff;
-  padding: 20px 15px;
+  padding: 2% 1.5%;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   transition: transform 0.3s ease;
@@ -20,7 +19,7 @@ position: fixed;
 
 /* Hide scrollbar but keep functionality */
 .policies-container::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
   background-color: transparent;
 }
 
@@ -31,19 +30,19 @@ position: fixed;
 
 
 .policy-tools-list {
-  width: 27%;
-  padding-block-start: 7px;
+  width: 35%;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 2%;
   border-radius: 8px;
   font-size: 14px;
 }
 
 .policy-subtools {
   flex-grow: 1;
-  max-height: 100%;
-  padding: 10px;
+  width: 65%;
+  height: 80%;
+  padding-left: 2%;
   overflow-y: auto;
   border-radius: 8px;
 }
@@ -55,14 +54,14 @@ position: fixed;
 /* Draggable Nodes */
 .draggable-node {
   width: 100%;
-  padding: 12px;
-  margin-block-end: 15px;
-  font-size: 13px;
+  padding: 4%;
+  margin-block-end: 4%;
+  font-size: 0.9rem;
   background-color: #4a575e;
   color: white;
   text-align: center;
-  border-radius: 8px;
-  border: 2px solid;
+  border-radius: 0.5rem;
+  border: 0.15rem solid;
   cursor: grab;
   transition: all 0.2s ease;
   user-select: none; /* Prevent text selection while dragging */
@@ -84,12 +83,12 @@ position: fixed;
 .tool-item {
   display: block;
   cursor: pointer;
-  padding: 11px;
-  font-size: 14px;
+  padding: 0.8rem;
+  font-size: 0.9rem;
   color: white;
   background-color: rgba(255, 255, 255, 0.1);
   text-align: center;
-  border-radius: 8px;
+  border-radius: 0.5rem;
   transition: all 0.2s ease;
 }
 
@@ -103,15 +102,17 @@ position: fixed;
 }
 
 .subtool-group {
-  padding: 10px;
-  border-radius: 8px;
-  margin-block-end: 15px;
+  background-color: '#495157';
+  padding: 2%;
+  border-radius: 0.5rem;
+  margin-block-end: 4%;
   background: rgba(255, 255, 255, 0.03);
 }
 
 /* Sidebar Styles */
 .policies-sidebar {
-  width: 280px;
+  width: 25%;
+  min-width: 15rem;
   background-color: var(--bg-secondary);
   border-right: 1px solid var(--border-color);
   display: flex;
@@ -121,7 +122,7 @@ position: fixed;
 }
 
 .policies-sidebar-header {
-  padding: 15px;
+  padding: 1.5rem;
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -134,7 +135,7 @@ position: fixed;
 .policies-sidebar-content {
   flex: 1;
   overflow-y: auto;
-  padding: 10px;
+  padding: 2%;
 }
 
 /* Node Category Styles */
@@ -164,11 +165,11 @@ position: fixed;
 .sidebar-node {
   display: flex;
   align-items: center;
-  padding: 10px;
-  margin-bottom: 8px;
+  padding: 2.5%;
+  margin-bottom: 2%;
   background-color: var(--bg-secondary);
-  border-radius: 4px;
-  border-left: 4px solid;
+  border-radius: 0.3rem;
+  border-left: 0.3rem solid;
   cursor: move;
   transition: all 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -180,7 +181,7 @@ position: fixed;
 }
 
 .node-icon {
-  margin-right: 10px;
+  margin-right: 3%;
   display: flex;
   align-items: center;
   font-size: 0.9rem;

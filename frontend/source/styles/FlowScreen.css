@@ -14,7 +14,7 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   padding: 12px;
-  transition: transform 0.06s, box-shadow 0.2s;
+  transition: transform 0.00s, box-shadow 0.0s;
 }
 
 .react-flow__node:hover {

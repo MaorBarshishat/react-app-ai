@@ -40,11 +40,10 @@
   }
 
 .investigations-container {
+  width: 100%;
   height: 100%;
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  color: var(--color-primary);
+  padding: 2% 3%;
+  /* Maintain responsive spacing */
 }
 
 .investigations-header {
@@ -72,7 +71,10 @@
 
 /* Folder Sidebar */
 .folder-sidebar {
-  width: 320px;
+  width: 25%; /* Instead of fixed pixels */
+  min-width: 15rem; /* Minimum width for usability */
+  padding: 1.5%;
+  margin-right: 2%;
   background: var(--bg-secondary);
   border-radius: 8px;
   box-shadow: 0 2px 10px var(--shadow-color);
@@ -121,14 +123,15 @@
 .folder-item, .file-item {
   display: flex;
   align-items: center;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.6rem;
   cursor: pointer;
   position: relative;
   border-left: 3px solid transparent;
-  margin-bottom: 2px;
+  margin: 0.15rem 0;
   font-size: 0.9rem;
   width: 100%;
   box-sizing: border-box;
+  height: 2.5rem; /* Instead of 32px */
 }
 
 .folder-item:hover, .file-item:hover {
@@ -304,10 +307,11 @@
 /* Details Panel */
 .details-panel {
   flex: 1;
+  padding: 2%;
+  border-radius: 0.5rem;
   background: var(--bg-secondary);
   border-radius: 8px;
   box-shadow: 0 2px 10px var(--shadow-color);
-  padding: 2rem;
   overflow-y: auto;
   padding-top: 1rem;
 }
@@ -357,8 +361,8 @@
 }
 
 .investigate-button {
-  padding: 0.75rem 1.5rem;
-  border-radius: 6px;
+  padding: 0.75rem 1.2rem;
+  border-radius: 0.5rem;
   font-size: 0.95rem;
   font-weight: 500;
   display: flex;
@@ -636,7 +640,7 @@
   padding: 0.25rem 0.5rem;
   background: var(--bg-tertiary);;
   color: #3182ce;
-  border-radius: 4px;
+  border-radius: 0.3rem;
   font-size: 0.8rem;
   font-weight: 500;
 }
@@ -960,12 +964,12 @@
 
 
 .menu-item {
-  padding: 0.6rem 1rem;
+  padding: 0.6rem 0.9rem;
   font-size: 0.9rem;
   display: flex;
   width: 100%;
   align-items: center;
-  gap: 8px;
+  gap: 0.6rem;
   color: white;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1586,8 +1590,8 @@
 
 /* Action Buttons */
 .action-button {
-  padding: 0.75rem 1.5rem;
-  border-radius: 6px;
+  padding: 0.75rem 1.2rem;
+  border-radius: 0.5rem;
   font-size: 0.95rem;
   font-weight: 500;
   display: flex;
@@ -1815,7 +1819,7 @@
 }
 
 .menu-item {
-  padding: 0.6rem 1rem;
+  padding: 0.6rem 0.9rem;
   font-weight: 500;
   transition: all 0.2s ease;
 }
