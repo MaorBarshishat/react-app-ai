@@ -11,7 +11,7 @@ function DefaultNode({ id, data }: NodeProps<Node<{ text: string; label?: string
   const { updateNodeData } = useReactFlow();
 
   return (
-    <div style={{minWidth:'15px'}}>
+    <div >
       <div>{data.label ? data.label : `node ${id}`}</div> {/* הצגת label אם קיים, אחרת id */}
       <div>
     </div>

@@ -63,7 +63,7 @@ const policiesNodes = [
             key={tool.label}
             className={`tool-item ${activeTool === tool.label ? "active-tool" : ""}`}
             onClick={() => setActiveTool(tool.label)}
-            style={{ backgroundColor: '#495157', color: '#ffffff' }}
+            style={{  color: '#ffffff' }}
           >
             {tool.icon}<br />{tool.label}
           </div>

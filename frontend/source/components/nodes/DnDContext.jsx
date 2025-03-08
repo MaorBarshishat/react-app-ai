@@ -1,6 +1,4 @@
 // DnDContext.jsx
-
-
 import { createContext, useContext, useState } from 'react';
 
 // יצירת הקשר

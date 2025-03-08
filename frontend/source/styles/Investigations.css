@@ -1833,6 +1833,7 @@
 .file-badges .severity-badge {
   background: transparent;
   padding: 2px 6px;
+  
   font-size: 0.65rem;
   border: 1px solid currentColor;
   margin-left: 4px;
@@ -3799,5 +3800,122 @@
   padding: 4px 10px;
   font-size: 0.75rem;
   height: auto;
+}
+
+/* Add this to your CSS */
+.calendar-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  height: auto;
+  border-top: 1px solid var(--border-color);
+  padding-top: 6px;
+}
+
+.add-date-btn, .done-btn {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  height: auto;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-date-btn {
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+}
+
+.done-btn {
+  background-color: var(--bg-tertiary);
+  color: var(--color-primary);
+  border: 1px solid var(--border-color);
+}
+
+.add-date-btn:hover {
+  background-color: var(--accent-hover);
+}
+
+.done-btn:hover {
+  background-color: var(--bg-hover);
+}
+
+/* Update date type selector to display horizontally */
+.date-type-selector {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.date-type-btn {
+  flex: 0 1 auto; /* Don't grow, allow shrinking, use auto basis */
+  min-width: 120px; /* Set a reasonable minimum width */
+  max-width: 160px; /* Limit maximum width */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-tertiary);
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.date-type-selector {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  margin-bottom: 10px;
+  justify-content: flex-start; /* Align buttons to the left */
+}
+
+.date-type-btn.active {
+  background-color: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+.date-type-btn:hover:not(.active) {
+  background-color: var(--bg-hover);
+}
+
+/* Make placeholder text white in the details panel */
+.details-panel input::placeholder,
+.details-panel textarea::placeholder {
+  color: white !important;
+  opacity: 0.7 !important; /* Slightly transparent for better readability */
+}
+
+/* Vendor-specific selectors for cross-browser compatibility */
+.details-panel input::-webkit-input-placeholder,
+.details-panel textarea::-webkit-input-placeholder {
+  color: white !important;
+  opacity: 0.7 !important;
+}
+
+.details-panel input::-moz-placeholder,
+.details-panel textarea::-moz-placeholder {
+  color: white !important;
+  opacity: 0.7 !important;
+}
+
+.details-panel input:-ms-input-placeholder,
+.details-panel textarea:-ms-input-placeholder {
+  color: white !important;
+  opacity: 0.7 !important;
+}
+
+.details-panel input:-moz-placeholder,
+.details-panel textarea:-moz-placeholder {
+  color: white !important;
+  opacity: 0.7 !important;
 }
 

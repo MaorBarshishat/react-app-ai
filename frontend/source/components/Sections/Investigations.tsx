@@ -1,5 +1,5 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
-import { FaFolder, FaFolderOpen, FaFile, FaPlus, FaDownload, FaTrash, FaEllipsisH, FaCalendarAlt, FaServer, FaGlobe, FaPencilAlt, FaSave, FaTimes, FaSearch, FaChevronDown, FaChevronUp, FaEdit, FaArrowLeft, FaChevronRight, FaArrowRight, FaCalendarDay } from 'react-icons/fa';
+import { FaFolder, FaHistory,FaFolderOpen, FaFile, FaPlus, FaDownload, FaTrash, FaEllipsisH, FaCalendarAlt, FaEnvelope, FaGlobe, FaPencilAlt, FaSave, FaTimes, FaSearch, FaChevronDown, FaChevronUp, FaEdit, FaArrowLeft, FaChevronRight, FaArrowRight, FaCalendarDay, FaCheck } from 'react-icons/fa';
 import { ThemeContext } from '../../context/ThemeContext';
 import '../../styles/Investigations.css';
 import { format } from 'date-fns';
@@ -26,7 +26,7 @@ interface InvestigationFile {
   severity: 'low' | 'medium' | 'high' | 'critical';
   dateCreated: string;
   dates: (string | DateRange)[];
-  assets: string[];
+  assets: string[]; // Reverted from trashMails back to assets
   domains: string[];
   description: string;
   assignedTo: string;
@@ -72,7 +72,7 @@ const Investigations: React.FC = () => {
           severity: 'high',
           dateCreated: '2023-09-15',
           dates: ['2023-09-12', '2023-09-13', { startDate: '2023-09-14', endDate: '2023-09-15' }],
-          assets: ['workstation-1432', 'auth-server-01'],
+          assets: ['johndoe@example.com', 'admin@example.com'],
           domains: ['example.com', 'admin.example.com'],
           description: 'Multiple failed login attempts from unusual IP addresses detected.',
           assignedTo: 'John Doe'
@@ -85,7 +85,7 @@ const Investigations: React.FC = () => {
           severity: 'medium',
           dateCreated: '2023-09-18',
           dates: [{ startDate: '2023-09-17', endDate: '2023-09-18' }],
-          assets: ['file-server-06', 'workstation-1867'],
+          assets: ['alicesmith@internal.net', 'tech.support@internal.net'],
           domains: ['storage.internal.net'],
           description: 'Large data transfer detected outside of business hours.',
           assignedTo: 'Alice Smith'
@@ -106,7 +106,7 @@ const Investigations: React.FC = () => {
           severity: 'critical',
           dateCreated: '2023-09-10',
           dates: ['2023-09-05', '2023-09-06', '2023-09-07'],
-          assets: ['db-server-03', 'api-gateway-01'],
+          assets: ['database@example.com', 'api@example.com'],
           domains: ['api.example.com', 'db.example.com'],
           description: 'Unauthorized access to customer database. Investigation completed and remediation implemented.',
           assignedTo: 'John Doe'
@@ -139,7 +139,7 @@ const Investigations: React.FC = () => {
     severity: 'medium',
     dateCreated: new Date().toISOString().split('T')[0],
     dates: [],
-    assets: [],
+    assets: [], // Reverted from trashMails
     domains: [],
     description: '',
     assignedTo: ''
@@ -149,7 +149,7 @@ const Investigations: React.FC = () => {
   const [currentDate, setCurrentDate] = useState<string>('');
   const [dateRangeStart, setDateRangeStart] = useState<string>('');
   const [dateRangeEnd, setDateRangeEnd] = useState<string>('');
-  const [currentAsset, setCurrentAsset] = useState<string>('');
+  const [currentAsset, setCurrentAsset] = useState<string>(''); // Reverted from currentTrashMail
   const [currentDomain, setCurrentDomain] = useState<string>('');
   
   // Form input for date type selection
@@ -158,119 +158,119 @@ const Investigations: React.FC = () => {
   // For investigation results
   const [showResults, setShowResults] = useState(false);
   const [suspiciousLeads, setSuspiciousLeads] = useState<SuspiciousLead[]>([
-      {
-          id: 'lead-001',
-          asset: 'workstation-1432',
-          type: 'Login Anomaly',
-          fromDate: '2023-09-12',
-          toDate: '2023-09-15',
-          activeApps: ['Chrome', 'Outlook', 'FileZilla'],
-          supportiveData: 'Multiple failed login attempts from unusual geographic locations',
-          showUserJourney: false
-      },
-      {
-          id: 'lead-002',
-          asset: 'file-server-06',
-          type: 'Data Exfiltration',
-          fromDate: '2023-09-17',
-          toDate: '2023-09-18',
-          activeApps: ['FileZilla', 'PowerShell', 'CMD'],
-          supportiveData: 'Large file transfers outside business hours',
-          showUserJourney: false
-      },
-      {
-          id: 'lead-003',
-          asset: 'db-server-01',
-          type: 'Privilege Escalation',
-          fromDate: '2023-09-11',
-          toDate: '2023-09-11',
-          activeApps: ['Admin Console', 'Remote Desktop'],
-          supportiveData: 'Unauthorized access attempts detected',
-          showUserJourney: false
-      },
-      {
-          id: 'lead-004',
-          asset: 'workstation-2143',
-          type: 'Malware Infection',
-          fromDate: '2023-09-13',
-          toDate: '2023-09-20',
-          activeApps: ['Task Manager'],
-          supportiveData: 'Suspicious process execution flagged',
-          showUserJourney: false
-      },
-      {
-          id: 'lead-005',
-          asset: 'api-gateway-02',
-          type: 'DDoS Attack',
-          fromDate: '2023-09-19',
-          toDate: '2023-09-19',
-          activeApps: ['Web Server'],
-          supportiveData: 'Unusual traffic patterns detected',
-          showUserJourney: false
-      },
-      {
-          id: 'lead-006',
-          asset: 'auth-server-01',
-          type: 'Credential Theft',
-          fromDate: '2023-09-15',
-          toDate: '2023-09-15',
-          activeApps: ['Security Dashboard'],
-          supportiveData: 'Multiple credential reuse attempts observed',
-          showUserJourney: false
-      },
-      {
-          id: 'lead-007',
-          asset: 'workstation-3014',
-          type: 'File Integrity Violation',
-          fromDate: '2023-09-22',
-          toDate: '2023-09-23',
-          activeApps: ['Integrity Monitor'],
-          supportiveData: 'Suspicious file modifications recorded',
-          showUserJourney: false
-      },
-      {
-          id: 'lead-008',
-          asset: 'network-device-417',
-          type: 'Network Scanning',
-          fromDate: '2023-09-24',
-          toDate: '2023-09-24',
-          activeApps: ['Network Analyser'],
-          supportiveData: 'Unauthorized network scanning detected',
-          showUserJourney: false
-      },
-      {
-          id: 'lead-009',
-          asset: 'server-09',
-          type: 'Unauthorized Access',
-          fromDate: '2023-09-25',
-          toDate: '2023-09-26',
-          activeApps: ['Admin Interface'],
-          supportiveData: 'Access logs show invalid credentials',
-          showUserJourney: false
-      },
-      {
-          id: 'lead-010',
-          asset: 'printer-009',
-          type: 'Printing Anomaly',
-          fromDate: '2023-09-27',
-          toDate: '2023-09-27',
-          activeApps: ['Print Service'],
-          supportiveData: 'Suspicious large volume of print jobs initiated',
-          showUserJourney: false
-      },
-      {
-          id: 'lead-011',
-          asset: 'workstation-2345',
-          type: 'Email Phishing Attempt',
-          fromDate: '2023-09-18',
-          toDate: '2023-09-18',
-          activeApps: ['Email Client'],
-          supportiveData: 'Detected phishing emails with suspicious links',
-          showUserJourney: false
-      },
-      {
+    {
+        id: 'lead-001',
+        asset: 'john.doe@company.com',
+        type: 'Login Anomaly',
+        fromDate: '2023-09-12',
+        toDate: '2023-09-15',
+        activeApps: ['Chrome', 'Outlook', 'FileZilla'],
+        supportiveData: 'Multiple failed login attempts from unusual geographic locations',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-002',
+        asset: 'alice.smith@company.com',
+        type: 'Data Exfiltration',
+        fromDate: '2023-09-17',
+        toDate: '2023-09-18',
+        activeApps: ['FileZilla', 'PowerShell', 'CMD'],
+        supportiveData: 'Large file transfers outside business hours',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-003',
+        asset: 'robert.johnson@company.com',
+        type: 'Privilege Escalation',
+        fromDate: '2023-09-11',
+        toDate: '2023-09-11',
+        activeApps: ['Admin Console', 'Remote Desktop'],
+        supportiveData: 'Unauthorized access attempts detected',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-004',
+        asset: 'emily.wilson@company.com',
+        type: 'Malware Infection',
+        fromDate: '2023-09-13',
+        toDate: '2023-09-20',
+        activeApps: ['Task Manager'],
+        supportiveData: 'Suspicious process execution flagged',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-005',
+        asset: 'michael.brown@company.com',
+        type: 'DDoS Attack',
+        fromDate: '2023-09-19',
+        toDate: '2023-09-19',
+        activeApps: ['Web Server'],
+        supportiveData: 'Unusual traffic patterns detected',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-006',
+        asset: 'sarah.jones@corp.net',
+        type: 'Credential Theft',
+        fromDate: '2023-09-15',
+        toDate: '2023-09-15',
+        activeApps: ['Security Dashboard'],
+        supportiveData: 'Multiple credential reuse attempts observed',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-007',
+        asset: 'david.miller@corp.net',
+        type: 'File Integrity Violation',
+        fromDate: '2023-09-22',
+        toDate: '2023-09-23',
+        activeApps: ['Integrity Monitor'],
+        supportiveData: 'Suspicious file modifications recorded',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-008',
+        asset: 'jennifer.taylor@corp.net',
+        type: 'Network Scanning',
+        fromDate: '2023-09-24',
+        toDate: '2023-09-24',
+        activeApps: ['Network Analyser'],
+        supportiveData: 'Unauthorized network scanning detected',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-009',
+        asset: 'admin@enterprise.org',
+        type: 'Unauthorized Access',
+        fromDate: '2023-09-25',
+        toDate: '2023-09-26',
+        activeApps: ['Admin Interface'],
+        supportiveData: 'Access logs show invalid credentials',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-010',
+        asset: 'print.admin@enterprise.org',
+        type: 'Printing Anomaly',
+        fromDate: '2023-09-27',
+        toDate: '2023-09-27',
+        activeApps: ['Print Service'],
+        supportiveData: 'Suspicious large volume of print jobs initiated',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-011',
+        asset: 'james.williams@enterprise.org',
+        type: 'Email Phishing Attempt',
+        fromDate: '2023-09-18',
+        toDate: '2023-09-18',
+        activeApps: ['Email Client'],
+        supportiveData: 'Detected phishing emails with suspicious links',
+        showUserJourney: false
+    },
+    {
         id: 'lead-012',
-        asset: 'file-server-02',
+        asset: 'lisa.davis@enterprise.org',
         type: 'Unauthorized File Access',
         fromDate: '2023-09-29',
         toDate: '2023-09-30',
@@ -280,7 +280,7 @@ const Investigations: React.FC = () => {
     },
     {
         id: 'lead-013',
-        asset: 'backup-server-01',
+        asset: 'backup.admin@tech.io',
         type: 'Suspicious Backup Activity',
         fromDate: '2023-09-20',
         toDate: '2023-09-22',
@@ -290,7 +290,7 @@ const Investigations: React.FC = () => {
     },
     {
         id: 'lead-014',
-        asset: 'vpn-gateway-01',
+        asset: 'vpn.user@tech.io',
         type: 'VPN Abuse Detected',
         fromDate: '2023-09-21',
         toDate: '2023-09-21',
@@ -300,7 +300,7 @@ const Investigations: React.FC = () => {
     },
     {
         id: 'lead-015',
-        asset: 'laptop-1456',
+        asset: 'thomas.anderson@tech.io',
         type: 'Malicious Device Connection',
         fromDate: '2023-09-23',
         toDate: '2023-09-23',
@@ -310,7 +310,7 @@ const Investigations: React.FC = () => {
     },
     {
         id: 'lead-016',
-        asset: 'switch-03',
+        asset: 'network.admin@tech.io',
         type: 'Unauthorized Network Change',
         fromDate: '2023-09-26',
         toDate: '2023-09-26',
@@ -320,7 +320,7 @@ const Investigations: React.FC = () => {
     },
     {
         id: 'lead-017',
-        asset: 'email-server-02',
+        asset: 'email.admin@security.net',
         type: 'Spam Detection',
         fromDate: '2023-09-28',
         toDate: '2023-09-29',
@@ -330,7 +330,7 @@ const Investigations: React.FC = () => {
     },
     {
         id: 'lead-018',
-        asset: 'document-server-05',
+        asset: 'docs.manager@security.net',
         type: 'Sensitive Data Leak',
         fromDate: '2023-09-30',
         toDate: '2023-09-30',
@@ -340,7 +340,7 @@ const Investigations: React.FC = () => {
     },
     {
         id: 'lead-019',
-        asset: 'workstation-7890',
+        asset: 'oliver.harris@security.net',
         type: 'Suspicious Activity from Legit Account',
         fromDate: '2023-09-24',
         toDate: '2023-09-24',
@@ -350,7 +350,7 @@ const Investigations: React.FC = () => {
     },
     {
         id: 'lead-020',
-        asset: 'server-43',
+        asset: 'server.admin@security.net',
         type: 'Potential Ransomware Attack',
         fromDate: '2023-09-26',
         toDate: '2023-09-27',
@@ -360,7 +360,7 @@ const Investigations: React.FC = () => {
     },
     {
         id: 'lead-021',
-        asset: 'file-server-12',
+        asset: 'file.admin@internal.corp',
         type: 'Unauthorized File Modification',
         fromDate: '2023-09-28',
         toDate: '2023-09-29',
@@ -370,7 +370,7 @@ const Investigations: React.FC = () => {
     },
     {
         id: 'lead-022',
-        asset: 'database-server-04',
+        asset: 'db.admin@internal.corp',
         type: 'SQL Injection Attempt',
         fromDate: '2023-09-19',
         toDate: '2023-09-19',
@@ -380,7 +380,7 @@ const Investigations: React.FC = () => {
     },
     {
         id: 'lead-023',
-        asset: 'mail-server-14',
+        asset: 'sophia.martinez@internal.corp',
         type: 'Phishing Email Campaign',
         fromDate: '2023-09-18',
         toDate: '2023-09-18',
@@ -389,315 +389,316 @@ const Investigations: React.FC = () => {
         showUserJourney: false
     },
     {
-      id: 'lead-024',
-      asset: 'printer-03',
-      type: 'Unauthorized Printing Activity',
-      fromDate: '2023-09-22',
-      toDate: '2023-09-22',
-      activeApps: ['Printer Management'],
-      supportiveData: 'Large volume of printing from unauthorized users',
-      showUserJourney: false
-  },
-  {
-      id: 'lead-025',
-      asset: 'server-07',
-      type: 'Rogue Device Detected',
-      fromDate: '2023-09-13',
-      toDate: '2023-09-13',
-      activeApps: ['Network Monitor'],
-      supportiveData: 'A rogue device connected to the network',
-      showUserJourney: false
-  },
-  {
-      id: 'lead-026',
-      asset: 'workstation-1485',
-      type: 'Malicious Software Detection',
-      fromDate: '2023-09-15',
-      toDate: '2023-09-16',
-      activeApps: ['Antivirus'],
-      supportiveData: 'Malicious software was detected and quarantined',
-      showUserJourney: false
-  },
-  {
-      id: 'lead-027',
-      asset: 'file-server-09',
-      type: 'File Sharing Violation',
-      fromDate: '2023-09-20',
-      toDate: '2023-09-20',
-      activeApps: ['File Sharing Service'],
-      supportiveData: 'Unapproved file sharing detected',
-      showUserJourney: false
-  },
-  {
-      id: 'lead-028',
-      asset: 'vpn-gateway-02',
-      type: 'Multiple VPN Logins',
-      fromDate: '2023-09-21',
-      toDate: '2023-09-21',
-      activeApps: ['VPN Client'],
-      supportiveData: 'Multiple concurrent logins from the same account',
-      showUserJourney: false
-  },
-  {
-      id: 'lead-029',
-      asset: 'api-gateway-04',
-      type: 'Unauthorized API Access',
-      fromDate: '2023-09-14',
-      toDate: '2023-09-14',
-      activeApps: ['API Monitor'],
-      supportiveData: 'Unauthorized access attempts to APIs observed',
-      showUserJourney: false
-  },
-  {
-      id: 'lead-030',
-      asset: 'db-server-08',
-      type: 'Database Latency Detected',
-      fromDate: '2023-09-16',
-      toDate: '2023-09-17',
-      activeApps: ['Database Performance Monitor'],
-      supportiveData: 'Unusual delay in database queries detected',
-      showUserJourney: false
-  },
-  {
-      id: 'lead-031',
-      asset: 'security-camera-01',
-      type: 'Camera Tampering Detected',
-      fromDate: '2023-09-23',
-      toDate: '2023-09-24',
-      activeApps: ['Surveillance System'],
-      supportiveData: 'Security cameras were turned off during operational hours',
-      showUserJourney: false
-  },
-  {
-    id: 'lead-032',
-    asset: 'workstation-5678',
-    type: 'Suspicious Remote Access',
-    fromDate: '2023-09-26',
-    toDate: '2023-09-26',
-    activeApps: ['Remote Access Tool'],
-    supportiveData: 'Remote access initiated from an unrecognized location',
-    showUserJourney: false
-},
-{
-    id: 'lead-033',
-    asset: 'network-device-12',
-    type: 'DNS Spoofing Attempt',
-    fromDate: '2023-09-21',
-    toDate: '2023-09-23',
-    activeApps: ['DNS Monitor'],
-    supportiveData: 'Suspicious DNS queries made to unauthorized domains',
-    showUserJourney: false
-},
-{
-    id: 'lead-034',
-    asset: 'network-sensor-03',
-    type: 'Suspicious Network Traffic',
-    fromDate: '2023-09-18',
-    toDate: '2023-09-19',
-    activeApps: ['Traffic Analyser'],
-    supportiveData: 'High volume of outbound traffic detected',
-    showUserJourney: false
-},
-{
-    id: 'lead-035',
-    asset: 'mail-server-07',
-    type: 'Malicious Attachment Detected',
-    fromDate: '2023-09-24',
-    toDate: '2023-09-24',
-    activeApps: ['Email Security Gateway'],
-    supportiveData: 'Email with malicious attachment blocked',
-    showUserJourney: false
-},
-{
-    id: 'lead-036',
-    asset: 'web-server-19',
-    type: 'XSS Attack Detected',
-    fromDate: '2023-09-25',
-    toDate: '2023-09-25',
-    activeApps: ['Web Application Firewall'],
-    supportiveData: 'Cross-Site Scripting attempt detected and blocked',
-    showUserJourney: false
-},
-{
-    id: 'lead-037',
-    asset: 'file-server-05',
-    type: 'Sensitive File Access Attempt',
-    fromDate: '2023-09-29',
-    toDate: '2023-09-30',
-    activeApps: ['File System Monitor'],
-    supportiveData: 'Unauthorized access to classified documents detected',
-    showUserJourney: false
-},
-{
-    id: 'lead-038',
-    asset: 'workspace-1101',
-    type: 'Physical Security Breach',
-    fromDate: '2023-09-19',
-    toDate: '2023-09-19',
-    activeApps: ['Access Control System'],
-    supportiveData: 'Unauthorized entry detected at secured premises',
-    showUserJourney: false
-},
-{
-    id: 'lead-039',
-    asset: 'database-server-10',
-    type: 'Suspicious Database Query',
-    fromDate: '2023-09-20',
-    toDate: '2023-09-20',
-    activeApps: ['Database Activity Monitor'],
-    supportiveData: 'Extensive read operations detected on sensitive tables',
-    showUserJourney: false
-},
-{
-    id: 'lead-040',
-    asset: 'backup-device-04',
-    type: 'Backup Failure Detected',
-    fromDate: '2023-09-22',
-    toDate: '2023-09-22',
-    activeApps: ['Backup Solution'],
-    supportiveData: 'Backup process failed due to unauthorized changes',
-    showUserJourney: false
-},
-{
-    id: 'lead-041',
-    asset: 'web-application-03',
-    type: 'Unauthorized API Access Attempt',
-    fromDate: '2023-09-26',
-    toDate: '2023-09-27',
-    activeApps: ['API Gateway'],
-    supportiveData: 'Multiple unauthorized API access attempts logged',
-    showUserJourney: false
-},
-{
-    id: 'lead-042',
-    asset: 'network-monitor-05',
-    type: 'IoT Device Compromise',
-    fromDate: '2023-09-27',
-    toDate: '2023-09-27',
-    activeApps: ['IoT Security'],
-    supportiveData: 'IoT device reported abnormal behavior',
-    showUserJourney: false
-},
-{
-  id: 'lead-043',
-  asset: 'cloud-storage-02',
-  type: 'Data Leakage Detected',
-  fromDate: '2023-09-18',
-  toDate: '2023-09-19',
-  activeApps: ['Cloud Security'],
-  supportiveData: 'Sensitive data uploaded to public storage',
-  showUserJourney: false
-},
-{
-  id: 'lead-044',
-  asset: 'file-server-18',
-  type: 'Access Rights Abuse',
-  fromDate: '2023-09-20',
-  toDate: '2023-09-21',
-  activeApps: ['File Access Audit'],
-  supportiveData: 'Unauthorized file access rights granted to the user',
-  showUserJourney: false
-},
-{
-  id: 'lead-045',
-  asset: 'web-application-07',
-  type: 'SQL Injection Attack',
-  fromDate: '2023-09-22',
-  toDate: '2023-09-22',
-  activeApps: ['Web Application Firewall'],
-  supportiveData: 'Abnormal SQL queries detected and blocked',
-  showUserJourney: false
-},
-{
-  id: 'lead-046',
-  asset: 'api-gateway-01',
-  type: 'API Rate Limiting Violation',
-  fromDate: '2023-09-23',
-  toDate: '2023-09-23',
-  activeApps: ['API Management'],
-  supportiveData: 'Excessive API requests exceeding allowed limits',
-  showUserJourney: false
-},
-{
-  id: 'lead-047',
-  asset: 'workstation-1010',
-  type: 'Malicious Script Execution',
-  fromDate: '2023-09-24',
-  toDate: '2023-09-24',
-  activeApps: ['Endpoint Protection'],
-  supportiveData: 'Malicious scripts were detected and quarantined',
-  showUserJourney: false
-},
-{
-  id: 'lead-048',
-  asset: 'auth-server-03',
-  type: 'Multiple Failed Logins',
-  fromDate: '2023-09-25',
-  toDate: '2023-09-25',
-  activeApps: ['Authentication System'],
-  supportiveData: 'Many failed login attempts from a single IP address',
-  showUserJourney: false
-},
-{
-  id: 'lead-049',
-  asset: 'remote-access-server-02',
-  type: 'Unusual Remote Login',
-  fromDate: '2023-09-26',
-  toDate: '2023-09-26',
-  activeApps: ['Remote Desktop'],
-  supportiveData: 'Remote login detected from an unauthorized location',
-  showUserJourney: false
-},
-{
-  id: 'lead-050',
-  asset: 'network-device-006',
-  type: 'Unusual Device Behavior',
-  fromDate: '2023-09-27',
-  toDate: '2023-09-27',
-  activeApps: ['Network Management'],
-  supportiveData: 'Device exhibiting unusual network behavior',
-  showUserJourney: false
-},
-{
-  id: 'lead-051',
-  asset: 'cloud-storage-03',
-  type: 'Data Tampering',
-  fromDate: '2023-09-28',
-  toDate: '2023-09-28',
-  activeApps: ['Data Integrity Monitor'],
-  supportiveData: 'Modification of sensitive data files detected',
-  showUserJourney: false
-},
-{
-  id: 'lead-052',
-  asset: 'file-server-09',
-  type: 'Excessive File Access',
-  fromDate: '2023-09-29',
-  toDate: '2023-09-29',
-  activeApps: ['File Monitoring System'],
-  supportiveData: 'Abnormal number of access requests to sensitive files',
-  showUserJourney: false
-},
-{
-  id: 'lead-053',
-  asset: 'internal-website-04',
-  type: 'Cross-Site Scripting (XSS) Attack',
-  fromDate: '2023-09-30',
-  toDate: '2023-09-30',
-  activeApps: ['Web Security'],
-  supportiveData: 'XSS attack vector detected on internal site',
-  showUserJourney: false
-},
-{
-  id: 'lead-054',
-  asset: 'file-server-03',
-  type: 'Unauthorized Data Access',
-  fromDate: '2023-09-11',
-  toDate: '2023-09-11',
-  activeApps: ['File Audit'],
-  supportiveData: 'Unauthorized access to sensitive data files detected',
-  showUserJourney: false
-}]);
+        id: 'lead-024',
+        asset: 'print.user@internal.corp',
+        type: 'Unauthorized Printing Activity',
+        fromDate: '2023-09-22',
+        toDate: '2023-09-22',
+        activeApps: ['Printer Management'],
+        supportiveData: 'Large volume of printing from unauthorized users',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-025',
+        asset: 'security@global.com',
+        type: 'Rogue Device Detected',
+        fromDate: '2023-09-13',
+        toDate: '2023-09-13',
+        activeApps: ['Network Monitor'],
+        supportiveData: 'A rogue device connected to the network',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-026',
+        asset: 'ryan.thompson@global.com',
+        type: 'Malicious Software Detection',
+        fromDate: '2023-09-15',
+        toDate: '2023-09-16',
+        activeApps: ['Antivirus'],
+        supportiveData: 'Malicious software was detected and quarantined',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-027',
+        asset: 'file.sharing@global.com',
+        type: 'File Sharing Violation',
+        fromDate: '2023-09-20',
+        toDate: '2023-09-20',
+        activeApps: ['File Sharing Service'],
+        supportiveData: 'Unapproved file sharing detected',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-028',
+        asset: 'vpn.admin@global.com',
+        type: 'Multiple VPN Logins',
+        fromDate: '2023-09-21',
+        toDate: '2023-09-21',
+        activeApps: ['VPN Client'],
+        supportiveData: 'Multiple concurrent logins from the same account',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-029',
+        asset: 'api.developer@example.com',
+        type: 'Unauthorized API Access',
+        fromDate: '2023-09-14',
+        toDate: '2023-09-14',
+        activeApps: ['API Monitor'],
+        supportiveData: 'Unauthorized access attempts to APIs observed',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-030',
+        asset: 'db.user@example.com',
+        type: 'Database Latency Detected',
+        fromDate: '2023-09-16',
+        toDate: '2023-09-17',
+        activeApps: ['Database Performance Monitor'],
+        supportiveData: 'Unusual delay in database queries detected',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-031',
+        asset: 'security.camera@example.com',
+        type: 'Camera Tampering Detected',
+        fromDate: '2023-09-23',
+        toDate: '2023-09-24',
+        activeApps: ['Surveillance System'],
+        supportiveData: 'Security cameras were turned off during operational hours',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-032',
+        asset: 'emma.clark@example.com',
+        type: 'Suspicious Remote Access',
+        fromDate: '2023-09-26',
+        toDate: '2023-09-26',
+        activeApps: ['Remote Access Tool'],
+        supportiveData: 'Remote access initiated from an unrecognized location',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-033',
+        asset: 'dns.admin@corp.net',
+        type: 'DNS Spoofing Attempt',
+        fromDate: '2023-09-21',
+        toDate: '2023-09-23',
+        activeApps: ['DNS Monitor'],
+        supportiveData: 'Suspicious DNS queries made to unauthorized domains',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-034',
+        asset: 'network.sensor@corp.net',
+        type: 'Suspicious Network Traffic',
+        fromDate: '2023-09-18',
+        toDate: '2023-09-19',
+        activeApps: ['Traffic Analyser'],
+        supportiveData: 'High volume of outbound traffic detected',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-035',
+        asset: 'mail.server@corp.net',
+        type: 'Malicious Attachment Detected',
+        fromDate: '2023-09-24',
+        toDate: '2023-09-24',
+        activeApps: ['Email Security Gateway'],
+        supportiveData: 'Email with malicious attachment blocked',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-036',
+        asset: 'web.admin@enterprise.org',
+        type: 'XSS Attack Detected',
+        fromDate: '2023-09-25',
+        toDate: '2023-09-25',
+        activeApps: ['Web Application Firewall'],
+        supportiveData: 'Cross-Site Scripting attempt detected and blocked',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-037',
+        asset: 'file.access@enterprise.org',
+        type: 'Sensitive File Access Attempt',
+        fromDate: '2023-09-29',
+        toDate: '2023-09-30',
+        activeApps: ['File System Monitor'],
+        supportiveData: 'Unauthorized access to classified documents detected',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-038',
+        asset: 'physical.security@enterprise.org',
+        type: 'Physical Security Breach',
+        fromDate: '2023-09-19',
+        toDate: '2023-09-19',
+        activeApps: ['Access Control System'],
+        supportiveData: 'Unauthorized entry detected at secured premises',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-039',
+        asset: 'db.monitor@tech.io',
+        type: 'Suspicious Database Query',
+        fromDate: '2023-09-20',
+        toDate: '2023-09-20',
+        activeApps: ['Database Activity Monitor'],
+        supportiveData: 'Extensive read operations detected on sensitive tables',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-040',
+        asset: 'backup.device@tech.io',
+        type: 'Backup Failure Detected',
+        fromDate: '2023-09-22',
+        toDate: '2023-09-22',
+        activeApps: ['Backup Solution'],
+        supportiveData: 'Backup process failed due to unauthorized changes',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-041',
+        asset: 'web.developer@tech.io',
+        type: 'Unauthorized API Access Attempt',
+        fromDate: '2023-09-26',
+        toDate: '2023-09-27',
+        activeApps: ['API Gateway'],
+        supportiveData: 'Multiple unauthorized API access attempts logged',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-042',
+        asset: 'iot.security@security.net',
+        type: 'IoT Device Compromise',
+        fromDate: '2023-09-27',
+        toDate: '2023-09-27',
+        activeApps: ['IoT Security'],
+        supportiveData: 'IoT device reported abnormal behavior',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-043',
+        asset: 'cloud.admin@security.net',
+        type: 'Data Leakage Detected',
+        fromDate: '2023-09-18',
+        toDate: '2023-09-19',
+        activeApps: ['Cloud Security'],
+        supportiveData: 'Sensitive data uploaded to public storage',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-044',
+        asset: 'file.rights@security.net',
+        type: 'Access Rights Abuse',
+        fromDate: '2023-09-20',
+        toDate: '2023-09-21',
+        activeApps: ['File Access Audit'],
+        supportiveData: 'Unauthorized file access rights granted to the user',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-045',
+        asset: 'web.security@internal.corp',
+        type: 'SQL Injection Attack',
+        fromDate: '2023-09-22',
+        toDate: '2023-09-22',
+        activeApps: ['Web Application Firewall'],
+        supportiveData: 'Abnormal SQL queries detected and blocked',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-046',
+        asset: 'api.gateway@internal.corp',
+        type: 'API Rate Limiting Violation',
+        fromDate: '2023-09-23',
+        toDate: '2023-09-23',
+        activeApps: ['API Management'],
+        supportiveData: 'Excessive API requests exceeding allowed limits',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-047',
+        asset: 'nathan.parker@internal.corp',
+        type: 'Malicious Script Execution',
+        fromDate: '2023-09-24',
+        toDate: '2023-09-24',
+        activeApps: ['Endpoint Protection'],
+        supportiveData: 'Malicious scripts were detected and quarantined',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-048',
+        asset: 'authentication@global.com',
+        type: 'Multiple Failed Logins',
+        fromDate: '2023-09-25',
+        toDate: '2023-09-25',
+        activeApps: ['Authentication System'],
+        supportiveData: 'Many failed login attempts from a single IP address',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-049',
+        asset: 'remote.access@global.com',
+        type: 'Unusual Remote Login',
+        fromDate: '2023-09-26',
+        toDate: '2023-09-26',
+        activeApps: ['Remote Desktop'],
+        supportiveData: 'Remote login detected from an unauthorized location',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-050',
+        asset: 'network.device@global.com',
+        type: 'Unusual Device Behavior',
+        fromDate: '2023-09-27',
+        toDate: '2023-09-27',
+        activeApps: ['Network Management'],
+        supportiveData: 'Device exhibiting unusual network behavior',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-051',
+        asset: 'cloud.storage@example.com',
+        type: 'Data Tampering',
+        fromDate: '2023-09-28',
+        toDate: '2023-09-28',
+        activeApps: ['Data Integrity Monitor'],
+        supportiveData: 'Modification of sensitive data files detected',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-052',
+        asset: 'file.monitoring@example.com',
+        type: 'Excessive File Access',
+        fromDate: '2023-09-29',
+        toDate: '2023-09-29',
+        activeApps: ['File Monitoring System'],
+        supportiveData: 'Abnormal number of access requests to sensitive files',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-053',
+        asset: 'internal.website@example.com',
+        type: 'Cross-Site Scripting (XSS) Attack',
+        fromDate: '2023-09-30',
+        toDate: '2023-09-30',
+        activeApps: ['Web Security'],
+        supportiveData: 'XSS attack vector detected on internal site',
+        showUserJourney: false
+    },
+    {
+        id: 'lead-054',
+        asset: 'file.server@example.com',
+        type: 'Unauthorized Data Access',
+        fromDate: '2023-09-11',
+        toDate: '2023-09-11',
+        activeApps: ['File Audit'],
+        supportiveData: 'Unauthorized access to sensitive data files detected',
+        showUserJourney: false
+    }
+  ]);
   
   // Generate random user journey events
   const generateRandomJourneyEvents = (numEvents: number = 8): UserJourneyEvent[] => {
@@ -990,7 +991,7 @@ const Investigations: React.FC = () => {
     
     if (parentRect) {
       // Calculate position relative to parent container
-      setMenuPosition({
+    setMenuPosition({
         top: (rect.bottom - parentRect.top) / parentRect.height * 100,
         left: (rect.left - parentRect.left) / parentRect.width * 100
       });
@@ -1103,7 +1104,7 @@ const Investigations: React.FC = () => {
         severity: 'medium',
         dateCreated: new Date().toISOString().split('T')[0],
         dates: [],
-        assets: [],
+        assets: [], // Changed from trashMails
         domains: [],
         description: '',
         assignedTo: ''
@@ -1184,11 +1185,9 @@ const Investigations: React.FC = () => {
 
   // Handle removing an asset
   const removeAsset = (index: number) => {
-    const updatedAssets = [...(formData.assets || [])];
-    updatedAssets.splice(index, 1);
     setFormData({
       ...formData,
-      assets: updatedAssets
+      assets: (formData.assets || []).filter((_, i) => i !== index)
     });
   };
 
@@ -1339,7 +1338,7 @@ const Investigations: React.FC = () => {
           severity: 'medium' as const,
           dateCreated: new Date().toISOString().split('T')[0],
           dates: [],
-          assets: [],
+          assets: [], // Changed from trashMails
           domains: [],
           description: '',
           assignedTo: ''
@@ -1353,7 +1352,11 @@ const Investigations: React.FC = () => {
           return {
             ...folder,
             isOpen: true,
-            children: [...folder.children, newItem]
+            children: folder.children.filter(child => child.type === 'folder').concat(
+              [newItem] as any
+            ).concat(
+              folder.children.filter(child => child.type === 'file') as any
+            )
           };
         }
         // Handle nested folders
@@ -1879,23 +1882,40 @@ const Investigations: React.FC = () => {
             <div className="date-type-selector">
                 <button 
                   className={`date-type-btn ${dateInputType === 'specific' ? 'active' : ''}`}
-                  onClick={() => setDateInputType('specific')}
+                  onClick={() => {
+                    // Reset date selection when switching modes using proper Date objects
+                    setTempDateSelection({
+                      startDate: new Date(),
+                      endDate: new Date()
+                    });
+                    setDateInputType('specific');
+                    setShowDatePicker(prev => dateInputType !== 'specific' || !prev);
+                  }}
                 >
                   <FaCalendarDay /> Specific Date
                 </button>
                 <button 
                   className={`date-type-btn ${dateInputType === 'range' ? 'active' : ''}`}
-                  onClick={() => setDateInputType('range')}
+                  onClick={() => {
+                    // Reset date selection when switching modes using proper Date objects
+                    setTempDateSelection({
+                      startDate: new Date(),
+                      endDate: new Date()
+                    });
+                    setDateInputType('range');
+                    setShowDatePicker(prev => dateInputType !== 'range' || !prev);
+                  }}
                 >
                   <FaCalendarAlt /> Date Range
                 </button>
                 
-                  <button 
+                  {/* Remove the Show Calendar button entirely */}
+                  {/* <button 
                   className="date-picker-toggle-btn"
                   onClick={() => setShowDatePicker(!showDatePicker)}
                 >
                   <FaCalendarAlt /> {showDatePicker ? 'Hide Calendar' : 'Show Calendar'}
-                  </button>
+                  </button> */}
                   </div>
                   
               {showDatePicker && (
@@ -1915,6 +1935,13 @@ const Investigations: React.FC = () => {
                         >
                       <FaPlus /> Add {dateInputType === 'specific' ? 'Date' : 'Range'}
                         </button>
+                        <button 
+                          type="button" 
+                          className="done-btn"
+                          onClick={() => setShowDatePicker(false)}
+                        >
+                          <FaCheck /> Done
+                        </button>
                 </div>
               </div>
             )}
@@ -1925,7 +1952,7 @@ const Investigations: React.FC = () => {
                       <div key={index} className="form-chip">
                     {typeof date === 'string' ? (
                           <div>
-                            <FaCalendarDay className="date-chip-icon" />
+                            <FaCalendarDay className="date-chip-icon" />&nbsp;
                       <span>{date}</span>
                           </div>
                     ) : (
@@ -1954,41 +1981,40 @@ const Investigations: React.FC = () => {
           
           {/* Assets section */}
           <div className="form-section">
-            <h3>Assets</h3>
-            <div className="form-input-with-chips">
+            <h3 className="form-section-title">Assets</h3>
+            <div className="form-section-content">
+              <div className="input-group">
                 <input 
                   type="text" 
-                placeholder="Add asset and press Enter (e.g., server-001)"
-                  value={currentAsset} 
+                  value={currentAsset}
                   onChange={(e) => setCurrentAsset(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && currentAsset.trim()) {
-                    e.preventDefault();
-                    setFormData({
-                      ...formData,
-                      assets: [...(formData.assets || []), currentAsset.trim()]
-                    });
-                    setCurrentAsset('');
-                  }
-                }}
+                  onKeyPress={(e) => e.key === 'Enter' && addAsset()}
+                  placeholder="Enter email address"
                   className="form-control"
                 />
-              <div className="chips-container">
-              {formData.assets?.map((asset, index) => (
-                  <div key={index} className="form-chip">
-                  {asset}
-                    <button 
-                      onClick={() => setFormData({
-                        ...formData,
-                        assets: formData.assets?.filter((_, i) => i !== index)
-                      })}
-                      className="chip-remove"
-                    >
-                      ×
-                    </button>
-                </div>
-              ))}
               </div>
+              
+              {formData.assets && formData.assets.length > 0 ? (
+                <div className="chips-container">
+                  {formData.assets.map((email, index) => (
+                    <div key={index} className="form-chip">
+                      <FaEnvelope className="chip-icon" />
+                      <span>{email}</span>
+                      <button 
+                        type="button"
+                        onClick={() => removeAsset(index)}
+                        className="remove-chip-btn"
+                      >
+                        <FaTimes />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="no-items-message">
+                  No Assets added yet.
+                </div>
+              )}
             </div>
           </div>
           
@@ -2015,8 +2041,7 @@ const Investigations: React.FC = () => {
                 />
               <div className="chips-container">
               {formData.domains?.map((domain, index) => (
-                  <div key={index} className="form-chip">
-                  {domain}
+                  <div key={index} className="form-chip"><FaGlobe/>{domain}
                     <button 
                       onClick={() => setFormData({
                         ...formData,
@@ -2115,13 +2140,13 @@ const Investigations: React.FC = () => {
             <h3>Assets</h3>
             <div className="details-chips">
               {file.assets && file.assets.length > 0 ? (
-                file.assets.map((asset, index) => (
+                file.assets.map((email, index) => (
                   <div key={index} className="detail-chip">
-                    {asset}
+                    {email}
                 </div>
                 ))
               ) : (
-                <span className="no-data">No assets specified</span>
+                <span className="no-data">No Assets specified</span>
               )}
                 </div>
               </div>
@@ -2167,7 +2192,7 @@ const Investigations: React.FC = () => {
   const handleAssetInput = (value: string) => {
     setFormData(prev => ({
       ...prev,
-      assets: value.split(';').map(a => a.trim()).filter(a => a)
+      assets: value.split(';').map(t => t.trim()).filter(t => t)
     }));
   };
 
@@ -2371,19 +2396,24 @@ const Investigations: React.FC = () => {
     if (dateInputType === 'specific') {
       // Format date for display
       const formattedDate = format(tempDateSelection.startDate, 'yyyy-MM-dd');
-      if (!formData.dates.includes(formattedDate)) {
+      if (!formData.dates) {
+        setFormData({
+          ...formData,
+          dates: [formattedDate]
+        });
+      } else if (!formData.dates.includes(formattedDate)) {
         setFormData({
           ...formData,
           dates: [...formData.dates, formattedDate]
         });
       }
           } else {
-      // Add date range
+      // Adding a date range
       const startFormatted = format(tempDateSelection.startDate, 'yyyy-MM-dd');
       const endFormatted = format(tempDateSelection.endDate, 'yyyy-MM-dd');
       
       // Check if this exact range already exists
-      const rangeExists = formData.dates.some(date => {
+      const rangeExists = formData.dates?.some(date => {
         if (typeof date === 'object' && date.startDate && date.endDate) {
           return date.startDate === startFormatted && date.endDate === endFormatted;
         }
@@ -2393,10 +2423,22 @@ const Investigations: React.FC = () => {
       if (!rangeExists) {
         setFormData({
           ...formData,
-          dates: [...formData.dates, { startDate: startFormatted, endDate: endFormatted }]
+          dates: [
+            ...(formData.dates || []), 
+            { 
+              startDate: startFormatted, 
+              endDate: endFormatted 
+            }
+          ]
         });
       }
     }
+    
+    // Reset the date selection after adding
+    setTempDateSelection({
+      startDate: new Date(),
+      endDate: new Date()
+    });
   };
 
   // Helper function to find a file by ID
@@ -2425,7 +2467,7 @@ const Investigations: React.FC = () => {
         <button 
           className="menu-item create-folder-btn"
           onClick={(e) => {
-            e.stopPropagation();
+    e.stopPropagation();
             handleNewFolder(parentId || null);
             setShowNewItemMenu({ show: false });
           }}
@@ -2454,9 +2496,9 @@ const Investigations: React.FC = () => {
     
     const newFolderId = `folder-${Date.now()}`;
     const newFolder: InvestigationFolder = {
-      id: newFolderId,
-      name: folderName.trim(),
-      type: 'folder',
+          id: newFolderId,
+          name: folderName.trim(),
+          type: 'folder',
       children: [],
       isOpen: false
     };
@@ -2482,7 +2524,11 @@ const Investigations: React.FC = () => {
           return {
             ...folder,
           isOpen: true, // Open the folder when adding an item
-          children: [...folder.children, newItem]
+          children: folder.children.filter(child => child.type === 'folder').concat(
+            [newItem] as any
+          ).concat(
+            folder.children.filter(child => child.type === 'file') as any
+          )
           };
       } else if (folder.children.length > 0) {
         // Look in children folders
@@ -2517,7 +2563,7 @@ const Investigations: React.FC = () => {
       severity: 'medium',
       dateCreated: new Date().toISOString().split('T')[0],
       dates: [],
-      assets: [],
+      assets: [], // Changed from trashMails
       domains: [],
       description: '',
       assignedTo: ''
@@ -2639,18 +2685,24 @@ const Investigations: React.FC = () => {
   // Function to rename an item
   const renameItem = (itemId: string, newName: string) => {
     setFolderData(prevFolders => {
+      // Still use your existing updateItemName function
       const updateItemName = (items: (InvestigationFolder | InvestigationFile)[]): (InvestigationFolder | InvestigationFile)[] => {
         return items.map(item => {
           if (item.id === itemId) {
             return { ...item, name: newName };
           }
           if (item.type === 'folder') {
-            item.children = updateItemName(item.children);
+            return {
+              ...item,
+              children: updateItemName(item.children)
+            };
           }
           return item;
         });
       };
-      return updateItemName(prevFolders);
+
+      // Cast the result to ensure it's typed correctly for the top level
+      return updateItemName(prevFolders) as InvestigationFolder[];
     });
   };
 
@@ -2682,7 +2734,7 @@ const Investigations: React.FC = () => {
 
   // Fix the renderFileItem function to properly attach the ellipsis handler
   const renderFileItem = (file: InvestigationFile) => {
-    return (
+  return (
       <div 
         key={file.id}
         className={`file-item ${selectedItem?.id === file.id ? 'selected' : ''}`}
@@ -2718,7 +2770,7 @@ const Investigations: React.FC = () => {
       severity: 'medium',
       dateCreated: new Date().toISOString().split('T')[0],
       dates: [],
-      assets: [],
+      assets: [], // Changed from trashMails
       domains: [],
       description: '',
       assignedTo: ''
@@ -2936,15 +2988,15 @@ const Investigations: React.FC = () => {
           onClick={(e) => {
             // Only close menus if clicking directly on the overlay (not on menus or buttons)
             if (e.target === e.currentTarget) {
-              setShowFolderMenu({ show: false });
-              setShowFileMenu({ show: false });
-              setShowNewItemMenu({ show: false });
-              setOverlayVisible(false);
+            setShowFolderMenu({ show: false });
+            setShowFileMenu({ show: false });
+            setShowNewItemMenu({ show: false });
+            setOverlayVisible(false);
             }
           }}
         />
       )}
-
+      
       {/* Folder action menu */}
       {showFolderMenu.show && (
         <div 
@@ -2963,7 +3015,7 @@ const Investigations: React.FC = () => {
             className="menu-item"
             onClick={(e) => {
               e.preventDefault();
-              e.stopPropagation();
+            e.stopPropagation();
               console.log('Rename folder button clicked'); 
 
               if (showFolderMenu.folderId) {
@@ -2971,7 +3023,7 @@ const Investigations: React.FC = () => {
                 if (newName && newName.trim() !== "") {
                   renameItem(showFolderMenu.folderId, newName.trim());
                 }
-              }
+            }
               setShowFolderMenu({ show: false });
               setOverlayVisible(false);
             }}
@@ -3012,7 +3064,7 @@ const Investigations: React.FC = () => {
           </button>
           <button 
             className="menu-item delete-action"
-            onClick={(e) => { 
+            onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               console.log('Delete folder button clicked');
@@ -3028,7 +3080,7 @@ const Investigations: React.FC = () => {
           </button>
         </div>
       )}
-
+      
       {/* File action menu - Add this inside the return statement */}
       {showFileMenu.show && (
         <div 
@@ -3047,12 +3099,12 @@ const Investigations: React.FC = () => {
             className="menu-item"
             onClick={(e) => {
               e.preventDefault();
-              e.stopPropagation();
+            e.stopPropagation();
               console.log('Rename file button clicked');
               
               if (showFileMenu.fileId) {
                 const file = findFileById(showFileMenu.fileId);
-                if (file) {
+            if (file) {
                   const newName = prompt("Enter new file name:", file.name);
                   if (newName && newName.trim() !== "") {
                     renameItem(showFileMenu.fileId, newName.trim());
@@ -3078,14 +3130,14 @@ const Investigations: React.FC = () => {
             className="menu-item"
             onClick={(e) => {
               e.preventDefault();
-              e.stopPropagation();
+            e.stopPropagation();
               console.log('Edit file button clicked');
               
               if (showFileMenu.fileId) {
                 const file = findFileById(showFileMenu.fileId);
-                if (file) {
+            if (file) {
                   startEditing(file);
-                }
+            }
               }
               
               setShowFileMenu({ show: false });
@@ -3154,7 +3206,7 @@ const Investigations: React.FC = () => {
           </button>
         </div>
       )}
-
+      
       <div className="investigations-header">
         <h1>Investigations</h1>
         <p>Track and manage security incident investigations</p>
