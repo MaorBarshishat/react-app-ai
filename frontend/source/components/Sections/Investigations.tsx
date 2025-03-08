@@ -992,8 +992,8 @@ const Investigations: React.FC = () => {
     if (parentRect) {
       // Calculate position relative to parent container
     setMenuPosition({
-        top: (rect.bottom - parentRect.top) / parentRect.height * 100,
-        left: (rect.left - parentRect.left) / parentRect.width * 100
+        top: (rect.bottom - parentRect.top) / parentRect.height * 155,
+        left: (rect.left - parentRect.left) / parentRect.width * 27
       });
     } else {
       // Fallback if parent not found
@@ -1026,7 +1026,7 @@ const Investigations: React.FC = () => {
     
     // Position menu relative to the button
     setMenuPosition({
-      top: rect.bottom + window.scrollY - 70,
+      top: rect.bottom + window.scrollY ,
       left: rect.left + window.scrollX // Adjust to ensure it's visible
     });
     
@@ -2979,6 +2979,103 @@ const Investigations: React.FC = () => {
     return saveFunction;
   }, [folderData, selectedItem]); // These dependencies are correct
 
+  // 1. Fix the file item's ellipsis click handler - find this function:
+  const handleFileContextMenu = (e: React.MouseEvent, fileId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Get position from the clicked element
+    const rect = e.currentTarget.getBoundingClientRect();
+    
+    // Set absolute pixel positions instead of percentages
+    setMenuPosition({
+      top: rect.bottom,
+      left: rect.right - 100 // Offset to position menu to the left of the button
+    });
+    
+    setShowFileMenu({ show: true, fileId });
+    setOverlayVisible(true);
+  };
+
+  // 2. Similarly update the folder context menu handler:
+  const handleFolderContextMenu = (e: React.MouseEvent, folderId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Calculate position based on the click event
+    const rect = e.currentTarget.getBoundingClientRect();
+    const posX = rect.right;
+    const posY = rect.top;
+    
+    // Get viewport dimensions
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Set position as percentage of viewport
+    setMenuPosition({
+      left: (posX / viewportWidth) * 100,
+      top: (posY / viewportHeight) * 100
+    });
+    
+    setShowFolderMenu({ show: true, folderId });
+    setOverlayVisible(true);
+  };
+
+  // 3. Update the new item menu handler:
+  const handleNewButtonClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Calculate position based on the click event
+    const rect = e.currentTarget.getBoundingClientRect();
+    const posX = rect.right;
+    const posY = rect.bottom;
+    
+    // Get viewport dimensions
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Set position as percentage of viewport
+    setMenuPosition({
+      left: (posX / viewportWidth) * 100,
+      top: (posY / viewportHeight) * 100
+    });
+    
+    setShowNewItemMenu({ show: true });
+    setOverlayVisible(true);
+  };
+
+  // 4. Make sure the file item component uses the handler correctly (in the render function)
+  <div className="file-item-actions">
+    <button 
+      className="context-menu-trigger" 
+      onClick={(e) => handleFileContextMenu(e, file.id)}
+    >
+      <FaEllipsisH />
+    </button>
+  </div>
+
+  // 5. Update the action menu positions to use the dynamically calculated positions:
+  {showFileMenu.show && (
+    <div 
+      className="action-menu"
+      style={{ 
+        position: 'fixed',
+        top: `${menuPosition.top}px`, // Use pixels instead of percentages
+        left: `${menuPosition.left}px`, // Use pixels instead of percentages
+        padding: '0.6rem',
+        borderRadius: '0.4rem',
+        boxShadow: '0 0.15rem 0.75rem rgba(0, 0, 0, 0.1)',
+        zIndex: 1000
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Menu contents */}
+    </div>
+  )}
+
+  // Do the same for the other menus (folder menu and new item menu)
+
   return (
     <div className="investigations-container">
       {/* Overlay for closing menus */}
@@ -3086,8 +3183,9 @@ const Investigations: React.FC = () => {
         <div 
           className="action-menu"
           style={{ 
-            top: `${menuPosition.top}%`, 
-            left: `${menuPosition.left}%`,
+            position: 'fixed',
+            top: `${menuPosition.top}px`, // Use pixels instead of percentages
+            left: `${menuPosition.left}px`, // Use pixels instead of percentages
             padding: '0.6rem',
             borderRadius: '0.4rem',
             boxShadow: '0 0.15rem 0.75rem rgba(0, 0, 0, 0.1)',

@@ -3919,3 +3919,33 @@
   opacity: 0.7 !important;
 }
 
+/* Add these styles to fix menu visibility and positioning */
+.context-menu-trigger {
+  visibility: visible !important;
+  opacity: 1 !important;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  padding: 4px;
+  border-radius: 50%;
+  z-index: 5;
+}
+
+.file-item:hover .context-menu-trigger {
+  display: flex !important;
+}
+
+.action-menu {
+  display: block !important;
+  visibility: visible !important;
+  position: fixed;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 6px;
+  min-width: 180px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
