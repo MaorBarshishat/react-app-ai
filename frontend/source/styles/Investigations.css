@@ -1,4 +1,14 @@
 /* Button for investigation items */
+
+
+.resizer {
+  width: 10px;
+  height: 100%;
+  position: absolute;
+  right: 0;
+  top: 0;
+  cursor: ew-resize;
+}
 .investigation-item {
     cursor: pointer;
     justify-content: space-between;
@@ -71,10 +81,10 @@
 
 /* Folder Sidebar */
 .folder-sidebar {
-  width: 25%; /* Instead of fixed pixels */
+  
   min-width: 15rem; /* Minimum width for usability */
   padding: 1.5%;
-  margin-right: 2%;
+  margin-right: 2%; /* Adjusted to leave space for resizer */
   background: var(--bg-secondary);
   border-radius: 8px;
   box-shadow: 0 2px 10px var(--shadow-color);

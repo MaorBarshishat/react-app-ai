@@ -988,21 +988,21 @@ const Investigations: React.FC = () => {
     // Use a class-based approach for positioning instead of fixed coordinates
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const parentRect = (e.currentTarget.closest('.folder-sidebar') as HTMLElement)?.getBoundingClientRect();
-    
+    console.log(rect.top, rect.left);
     if (parentRect) {
       // Calculate position relative to parent container
     setMenuPosition({
-        top: (rect.bottom - parentRect.top) / parentRect.height * 155,
-        left: (rect.left - parentRect.left) / parentRect.width * 27
+        top: rect.top - rect.height ,
+        left: rect.left
       });
     } else {
       // Fallback if parent not found
       setMenuPosition({
-        top: rect.bottom / window.innerHeight * 100,
-        left: rect.left / window.innerWidth * 100
+        top: rect.top - rect.height ,
+        left: rect.left
       });
     }
-    
+    console.log(menuPosition);
     setOverlayVisible(true);
   };
 
@@ -1017,43 +1017,23 @@ const Investigations: React.FC = () => {
     setShowNewItemMenu({ show: false });
     
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    console.log('Menu position:', { top: rect.bottom, left: rect.left });
     console.log(!showFileMenu.show || showFileMenu.fileId !== fileId);
     setShowFileMenu({
       show: !showFileMenu.show || showFileMenu.fileId !== fileId,
       fileId
     });
     
+    console.log('Menu position:', { top: rect.top, left: rect.left });
     // Position menu relative to the button
     setMenuPosition({
-      top: rect.bottom + window.scrollY ,
-      left: rect.left + window.scrollX // Adjust to ensure it's visible
+      top: rect.top - rect.height ,
+      left: rect.left
     });
     
     setOverlayVisible(true);
   };
 
-  // Function for new item button
-  const handleNewItemButton = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.nativeEvent.stopImmediatePropagation();
-    
-    setShowFolderMenu({ show: false });
-    setShowFileMenu({ show: false });
-    
-    const buttonRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    
-    setShowNewItemMenu({
-      show: !showNewItemMenu.show,
-    });
-    
-    setMenuPosition({
-      top: buttonRect.bottom + window.scrollY , 
-      left: buttonRect.left + window.scrollX 
-    });
-    
-    setOverlayVisible(true);
-  };
+ 
 
   // Add these helper functions at the top of the component, after the state declarations
 
@@ -2175,6 +2155,33 @@ const Investigations: React.FC = () => {
     }
   };
 
+
+  const [sidebarWidth, setSidebarWidth] = useState(25); // Initialize width as a percentage
+  const sidebarRef = useRef(null);
+  useEffect(() => {
+    // Initialize the sidebar width based on the computed style or set a default
+    const initialWidth = sidebarRef.current ? sidebarRef.current.clientWidth / window.innerWidth * 100 : 25; // Default to 25%
+    setSidebarWidth(initialWidth);
+  }, []);
+
+  const handleMouseMove = (e) => {
+    const newWidth = (e.clientX / window.innerWidth) * 100; // Calculate width in percentage
+    if (newWidth >= 15 && newWidth <= 85) { // Constraints for sidebar width
+      setSidebarWidth(newWidth);
+    }
+  };
+
+  const handleMouseUp = () => {
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleMouseDown = () => {
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+
   // Add this utility function to fix TypeScript errors
   const updateArrayState = <T,>(current: T[], setter: React.Dispatch<React.SetStateAction<T[]>>, value: T) => {
     setter([...current, value]);
@@ -2716,9 +2723,9 @@ const Investigations: React.FC = () => {
     // Set menu position relative to the clicked element
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     setMenuPosition({
-      top: rect.bottom + window.scrollY - 60,
-      left: rect.left + window.scrollX - 150
-    });
+      top: rect.top,
+      left: rect.left
+        });
     
     // Show the appropriate menu based on item type
     if (item.type === 'folder') {
@@ -2822,7 +2829,8 @@ const Investigations: React.FC = () => {
         padding: '8px',
         borderRadius: '4px',
         boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-        zIndex: 1000
+        zIndex: 1000,
+        position: 'absolute'
       }}
       onClick={(e) => e.stopPropagation()}
     >
@@ -2989,8 +2997,8 @@ const Investigations: React.FC = () => {
     
     // Set absolute pixel positions instead of percentages
     setMenuPosition({
-      top: rect.bottom,
-      left: rect.right - 100 // Offset to position menu to the left of the button
+      top: rect.top,
+      left: rect.left
     });
     
     setShowFileMenu({ show: true, fileId });
@@ -3005,12 +3013,12 @@ const Investigations: React.FC = () => {
 
   // Also fix the type in the useEffect
   useEffect(() => {
-    console.log(newRootButton);
     if (showNewItemMenu.show && newRootButton) {
       const rect = newRootButton.getBoundingClientRect();
+      console.log(rect.top, rect.left);
       setNewItemMenuStyle({
         position: 'absolute',
-        top: `${rect.top - 20}px`,
+        top: `${rect.top - rect.height }px`,
         left: `${rect.left}px`,
         padding: '8px',
         borderRadius: '4px',
@@ -3025,46 +3033,16 @@ const Investigations: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Calculate position based on the click event
+    // Get accurate position including scroll
     const rect = e.currentTarget.getBoundingClientRect();
-    const posX = rect.right;
-    const posY = rect.top;
     
-    // Get viewport dimensions
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    
-    // Set position as percentage of viewport
+    // Position menu right next to the folder item
     setMenuPosition({
-      left: (posX / viewportWidth) * 100,
-      top: (posY / viewportHeight) * 100
-    });
+      top: rect.top,
+      left: rect.left
+          });
     
     setShowFolderMenu({ show: true, folderId });
-    setOverlayVisible(true);
-  };
-
-  // 3. Update the new item menu handler:
-  const handleNewButtonClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Calculate position based on the click event
-    const rect = e.currentTarget.getBoundingClientRect();
-    const posX = rect.right;
-    const posY = rect.bottom;
-    
-    // Get viewport dimensions
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    
-    // Set position as percentage of viewport
-    setMenuPosition({
-      left: (posX / viewportWidth) * 100,
-      top: (posY / viewportHeight) * 100
-    });
-    
-    setShowNewItemMenu({ show: true });
     setOverlayVisible(true);
   };
 
@@ -3083,7 +3061,7 @@ const Investigations: React.FC = () => {
     <div 
       className="action-menu"
       style={{ 
-        position: 'fixed',
+        position: 'absolute',
         top: `${menuPosition.top}px`, // Use pixels instead of percentages
         left: `${menuPosition.left}px`, // Use pixels instead of percentages
         padding: '0.6rem',
@@ -3122,8 +3100,9 @@ const Investigations: React.FC = () => {
         <div 
           className="action-menu"
           style={{ 
-            top: `${menuPosition.top}%`, 
-            left: `${menuPosition.left}%`,
+            position: 'absolute',
+            top: `${menuPosition.top}px`, 
+            left: `${menuPosition.left}px`,
             padding: '0.6rem',
             borderRadius: '0.4rem',
             boxShadow: '0 0.15rem 0.75rem rgba(0, 0, 0, 0.1)',
@@ -3206,7 +3185,7 @@ const Investigations: React.FC = () => {
         <div 
           className="action-menu"
           style={{ 
-            position: 'fixed',
+            position: 'absolute',
             top: `${menuPosition.top}px`, // Use pixels instead of percentages
             left: `${menuPosition.left}px`, // Use pixels instead of percentages
             padding: '0.6rem',
@@ -3327,8 +3306,9 @@ const Investigations: React.FC = () => {
       </div>
       
       <div className="investigation-content">
-        <div className="folder-sidebar">
-          <div className="folder-header">
+        <div className="folder-sidebar" ref={sidebarRef} style={{ width: `${sidebarWidth}%` }}>
+        <div className="resizer" onMouseDown={handleMouseDown} style={{ width: '5px', cursor: 'ew-resize', backgroundColor: 'transparent' }} />
+        <div className="folder-header">
             <h3>Investigation Files</h3>
             <button 
               id="new-root-button.ID"
