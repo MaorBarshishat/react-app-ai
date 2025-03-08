@@ -2997,6 +2997,29 @@ const Investigations: React.FC = () => {
     setOverlayVisible(true);
   };
 
+  // Fix the type of newItemMenuStyle state
+  const [newItemMenuStyle, setNewItemMenuStyle] = useState<React.CSSProperties>({
+  });
+
+  const newRootButton = document.getElementById('new-root-button.ID');
+
+  // Also fix the type in the useEffect
+  useEffect(() => {
+    console.log(newRootButton);
+    if (showNewItemMenu.show && newRootButton) {
+      const rect = newRootButton.getBoundingClientRect();
+      setNewItemMenuStyle({
+        position: 'absolute',
+        top: `${rect.top - 20}px`,
+        left: `${rect.left}px`,
+        padding: '8px',
+        borderRadius: '4px',
+        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+        zIndex: 1000,
+      });
+    }
+  }, [showNewItemMenu.show, newRootButton]);
+
   // 2. Similarly update the folder context menu handler:
   const handleFolderContextMenu = (e: React.MouseEvent, folderId: string) => {
     e.preventDefault();
@@ -3266,44 +3289,37 @@ const Investigations: React.FC = () => {
 
       {/* New item menu */}
       {showNewItemMenu.show && (
-        <div 
-          className="action-menu new-item-menu"
-          style={{ 
-            top: `27%`, 
-            left: `13%`,
-            padding: '8px',
-            borderRadius: '4px',
-            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-            zIndex: 1000
+      <div
+        className="action-menu new-item-menu"
+        style={newItemMenuStyle}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          className="menu-item"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleNewFolder(null);
+            setShowNewItemMenu({ show: false });
+            setOverlayVisible(false);
           }}
-          onClick={e => e.stopPropagation()}
         >
-          <button 
-            className="menu-item"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleNewFolder(null);
-              setShowNewItemMenu({ show: false });
-              setOverlayVisible(false);
-            }}
-          >
-            <FaFolder /> New Folder
-          </button>
-          <button 
-            className="menu-item"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleNewInvestigation(null);
-              setShowNewItemMenu({ show: false });
-              setOverlayVisible(false);
-            }}
-          >
-            <FaFile /> New Investigation
-          </button>
-        </div>
-      )}
+          <FaFolder /> New Folder
+        </button>
+        <button
+          className="menu-item"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleNewInvestigation(null);
+            setShowNewItemMenu({ show: false });
+            setOverlayVisible(false);
+          }}
+        >
+          <FaFile /> New Investigation
+        </button>
+      </div>
+    )}
       
       <div className="investigations-header">
         <h1>Investigations</h1>
@@ -3315,6 +3331,7 @@ const Investigations: React.FC = () => {
           <div className="folder-header">
             <h3>Investigation Files</h3>
             <button 
+              id="new-root-button.ID"
               className="new-root-button"
               onClick={(e) => {
                 e.stopPropagation();
