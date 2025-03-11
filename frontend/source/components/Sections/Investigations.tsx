@@ -1860,20 +1860,7 @@ const Investigations: React.FC = () => {
             <h3 className="form-section-title">Dates</h3>
             <div className="form-section-content">
             <div className="date-type-selector">
-                <button 
-                  className={`date-type-btn ${dateInputType === 'specific' ? 'active' : ''}`}
-                  onClick={() => {
-                    // Reset date selection when switching modes using proper Date objects
-                    setTempDateSelection({
-                      startDate: new Date(),
-                      endDate: new Date()
-                    });
-                    setDateInputType('specific');
-                    setShowDatePicker(prev => dateInputType !== 'specific' || !prev);
-                  }}
-                >
-                  <FaCalendarDay /> Specific Date
-                </button>
+               
                 <button 
                   className={`date-type-btn ${dateInputType === 'range' ? 'active' : ''}`}
                   onClick={() => {
@@ -1889,42 +1876,44 @@ const Investigations: React.FC = () => {
                   <FaCalendarAlt /> Date Range
                 </button>
                 
-                  {/* Remove the Show Calendar button entirely */}
-                  {/* <button 
-                  className="date-picker-toggle-btn"
-                  onClick={() => setShowDatePicker(!showDatePicker)}
-                >
-                  <FaCalendarAlt /> {showDatePicker ? 'Hide Calendar' : 'Show Calendar'}
-                  </button> */}
-                  </div>
-                  
+                {/* Remove the Show Calendar button entirely */}
+                {/* <button 
+                className="date-picker-toggle-btn"
+                onClick={() => setShowDatePicker(!showDatePicker)}
+              >
+                <FaCalendarAlt /> {showDatePicker ? 'Hide Calendar' : 'Show Calendar'}
+                </button> */}
+                </div>
+                
               {showDatePicker && (
                 <div className="date-calendar-container">
-                  <CustomDateRangePicker
-                    onChange={handleCalendarDateChange}
-                    initialStartDate={tempDateSelection.startDate}
-                    initialEndDate={tempDateSelection.endDate}
-                    singleDateMode={dateInputType === 'specific'}
-                  />
+                  <div className="date-picker-content">
+                    <CustomDateRangePicker
+                      onChange={handleCalendarDateChange}
+                      initialStartDate={tempDateSelection.startDate}
+                      initialEndDate={tempDateSelection.endDate}
+                      singleDateMode={dateInputType === 'specific'}
+                    />
+                  </div>
                   
                   <div className="calendar-actions">
-                        <button 
-                          type="button" 
+                    <button 
+                      type="button" 
                       className="add-date-btn"
                       onClick={addDateFromCalendar}
-                        >
+                    >
                       <FaPlus /> Add {dateInputType === 'specific' ? 'Date' : 'Range'}
-                        </button>
-                        <button 
-                          type="button" 
-                          className="done-btn"
-                          onClick={() => setShowDatePicker(false)}
-                        >
-                          <FaCheck /> Done
-                        </button>
+                    </button>
+                    <button 
+                      type="button" 
+                      className="done-btn"
+                      onClick={() => setShowDatePicker(false)}
+                    >
+                      <FaCheck /> Done
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
             
                 {formData.dates && formData.dates.length > 0 ? (
                   <div className="chips-container">
@@ -2157,15 +2146,15 @@ const Investigations: React.FC = () => {
 
 
   const [sidebarWidth, setSidebarWidth] = useState(25); // Initialize width as a percentage
-  const sidebarRef = useRef(null);
+  const sidebarRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
-    // Initialize the sidebar width based on the computed style or set a default
-    const initialWidth = sidebarRef.current ? sidebarRef.current.clientWidth / window.innerWidth * 100 : 25; // Default to 25%
+    const initialWidth = sidebarRef.current ? sidebarRef.current.clientWidth / window.innerWidth * 100 : 25;
     setSidebarWidth(initialWidth);
   }, []);
 
-  const handleMouseMove = (e) => {
-    const newWidth = (e.clientX / window.innerWidth) * 100; // Calculate width in percentage
+  const handleMouseMove = (e: MouseEvent) => {
+    const newWidth = (e.clientX / window.innerWidth) * 100;
     if (newWidth >= 15 && newWidth <= 85) { // Constraints for sidebar width
       setSidebarWidth(newWidth);
     }
@@ -2414,7 +2403,7 @@ const Investigations: React.FC = () => {
           dates: [...formData.dates, formattedDate]
         });
       }
-          } else {
+    } else {
       // Adding a date range
       const startFormatted = format(tempDateSelection.startDate, 'yyyy-MM-dd');
       const endFormatted = format(tempDateSelection.endDate, 'yyyy-MM-dd');
@@ -3306,8 +3295,20 @@ const Investigations: React.FC = () => {
       </div>
       
       <div className="investigation-content">
-        <div className="folder-sidebar" ref={sidebarRef} style={{ width: `${sidebarWidth}%` }}>
-        <div className="resizer" onMouseDown={handleMouseDown} style={{ width: '5px', cursor: 'ew-resize', backgroundColor: 'transparent' }} />
+        <div className="folder-sidebar" ref={sidebarRef} style={{ width: `${sidebarWidth}%`, position: 'relative' }}>
+        <div 
+          className="resizer" 
+          onMouseDown={handleMouseDown} 
+          style={{ 
+            position: 'absolute', 
+            right: 0, 
+            top: 0, 
+            bottom: 0, 
+            width: '5px', 
+            cursor: 'ew-resize', 
+            backgroundColor: 'transparent' 
+          }} 
+        />
         <div className="folder-header">
             <h3>Investigation Files</h3>
             <button 
@@ -3329,7 +3330,7 @@ const Investigations: React.FC = () => {
           </div>
         </div>
         
-        <div className="details-panel">
+        <div className="details-panel" style={{ width: `${100 - sidebarWidth}%` }}>
           {renderItemDetails()}
         </div>
       </div>

@@ -42,12 +42,61 @@ const Policies = () => {
   const [type, label, color, setNode] = useDnD();
   const [widthPercentage, setWidthPercentage] = useState(28); // State for width in percentage
   const policiesContainerRef = useRef(null); // Ref for the policies container
+  
+  // State for dragging functionality
+  const [position, setPosition] = useState({ x: 20 , y: 20 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   const onDragStart = (event, nodeLabel, nodeType, color) => {
     setNode(nodeType, nodeLabel, color);
     event.dataTransfer.effectAllowed = 'move';
   };
+  
+  // Container dragging handlers
+  const handleContainerMouseDown = (e) => {
+    // Don't start dragging when clicking on interactive elements
+    if (e.target.closest('.policy-tools-list, .policy-subtools, .resizer, .draggable-node, .tool-item')) {
+      return;
+    }
+    
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    });
+    
+    // Prevent text selection during drag
+    e.preventDefault();
+  };
 
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (isDragging) {
+        setPosition({
+          x: e.clientX - dragStart.x,
+          y: e.clientY - dragStart.y
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    // Add global event listeners when dragging
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragStart]);
+
+  // Existing resize functionality
   useEffect(() => {
     const handleMouseMove = (e) => {
       const newWidth = (e.clientX / window.innerWidth) * 100; // Calculate width as a percentage
@@ -79,7 +128,18 @@ const Policies = () => {
   }, [policiesContainerRef]);
 
   return (
-    <div className="policies-container" ref={policiesContainerRef} style={{ width: `${widthPercentage}%` }}> {/* Set width using % */}
+    <div 
+      className="policies-container" 
+      ref={policiesContainerRef} 
+      style={{ 
+        width: `${widthPercentage}%`,
+        position: 'absolute',
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        cursor: isDragging ? 'grabbing' : 'grab'
+      }}
+      onMouseDown={handleContainerMouseDown}
+    >
       <div className="resizer" style={{ cursor: 'ew-resize', width: '10px', height: '100%', backgroundColor: 'transparent', position: 'absolute', right: '0' }}></div>
       <div className="policy-tools-list">
         {policiesNodes.map((tool) => (
@@ -103,10 +163,10 @@ const Policies = () => {
                   key={subTool.label}
                   className={`draggable-node ${tool.type}`}
                   style={{ justifyContent: 'center', border: `2px solid ${tool.color}`, backgroundColor: '#6c757d', color: '#ffffff' }}
-                  onDragStart={(event) => onDragStart(event, subTool.label, subTool.type, tool.color)} // Pass subtool.label and subtool.type
+                  onDragStart={(event) => onDragStart(event, subTool.label, subTool.type, tool.color)}
                   draggable
                 >
-                  {subTool.label} {/* Display the label of the subTool */}
+                  {subTool.label}
                 </button>
               ))}
             </div>
