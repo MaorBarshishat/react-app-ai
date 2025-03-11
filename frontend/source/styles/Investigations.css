@@ -3082,3 +3082,74 @@
   background-color: var(--bg-hover);
 }
 
+/* Add styles for the Apply Policy button */
+.apply-policy-button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background-color 0.3s ease;
+}
+
+.apply-policy-button:hover {
+  background-color: #45a049;
+}
+
+/* Styles for generated policies */
+.generated-policies {
+  margin-top: 20px;
+}
+
+.policy-item {
+  background-color: #2d3748;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.policy-item h4 {
+  margin: 0 0 10px;
+  color: #ffffff;
+}
+
+.policy-item p {
+  margin: 0 0 10px;
+  color: #cbd5e0;
+}
+
+.policy-item button {
+  background-color: #3182ce;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.policy-item button:hover {
+  background-color: #2b6cb0;
+}
+
+/* Notification styles */
+.notification {
+  padding: 10px;
+  border-radius: 5px;
+  margin-top: 10px;
+  text-align: center;
+  transition: opacity 0.3s ease;
+}
+
+.notification.success {
+  background-color: #4CAF50; /* Green for success */
+  color: white;
+}
+
+.notification.error {
+  background-color: #F44336; /* Red for error */
+  color: white;
+}
+

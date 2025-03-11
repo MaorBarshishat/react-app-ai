@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaDatabase, FaBrain, FaStar, FaRegBuilding, FaTag, FaMapMarked, FaExclamationCircle, FaCogs, FaPlayCircle, FaBug } from 'react-icons/fa';
+import { FaCog, FaDatabase, FaBrain, FaStar, FaRegBuilding, FaTag, FaMapMarked, FaExclamationCircle, FaCogs, FaPlayCircle, FaBug } from 'react-icons/fa';
 import { useDnD } from '../nodes/DnDContext';
 import '../../styles/Policies.css';
+import { costumePolicies } from '../Sections/Investigations';
 
 /**
  * @typedef {Object} SubPolicy
@@ -16,9 +17,8 @@ import '../../styles/Policies.css';
  * @property {SubPolicy[]} subPoliciesNodes
  * @property {React.ReactNode} icon
  */
-
 const Policies = () => {
-  const policiesNodes = [
+  const [policiesNodes, setPoliciesNodes] = useState([
     { label: "DATA", color: "#1E90FF", subPoliciesNodes: ["Invest App", "Loans App", "API", "Splunk", "DL Users Data", "Auth-n"].map(label => ({ label, type: "default" })), icon: <FaDatabase color="#1E90FF" /> },
     { label: "AI Models", color: "#8A2BE2", subPoliciesNodes: ["Abnormal Volume", "Sensitive Data", "Fraud Rings", "Abnormal Similarity", "Abnormal Seriality", "Distinct Values", "Scripting Detection"].map(label => ({ label, type: "default" })), icon: <FaBrain color="#8A2BE2" /> },
     { label: "Reputations", color: "#FFD700", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, type: "default" })), icon: <FaStar color="#FFD700" /> },
@@ -35,8 +35,10 @@ const Policies = () => {
       { label: "RELATED TO", type: "default" },
     ], icon: <FaCogs color="#808080" /> },
     { label: "Actions", color: "#4169E1", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, type: "default" })), icon: <FaPlayCircle color="#4169E1" /> },
-    { label: "Detected Anomalies", color: "#8B0000", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, type: "default" })), icon: <FaBug color="#8B0000" /> }
-  ];
+    { label: "Detected Anomalies", color: "#8B0000", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, type: "default" })), icon: <FaBug color="#8B0000" /> },
+    { label: "Custom Policies", color: "#FF8C00", subPoliciesNodes: costumePolicies, icon: <FaCog color="#FF8C00" /> }  // Unique option
+  ]);
+
 
   const [activeTool, setActiveTool] = useState(policiesNodes[0].label);
   const [type, label, color, setNode] = useDnD();
@@ -127,51 +129,68 @@ const Policies = () => {
     };
   }, [policiesContainerRef]);
 
-  return (
-    <div 
-      className="policies-container" 
-      ref={policiesContainerRef} 
-      style={{ 
-        width: `${widthPercentage}%`,
-        position: 'absolute',
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        cursor: isDragging ? 'grabbing' : 'grab'
-      }}
-      onMouseDown={handleContainerMouseDown}
-    >
-      <div className="resizer" style={{ cursor: 'ew-resize', width: '10px', height: '100%', backgroundColor: 'transparent', position: 'absolute', right: '0' }}></div>
-      <div className="policy-tools-list">
-        {policiesNodes.map((tool) => (
-          <div
-            key={tool.label}
-            className={`tool-item ${activeTool === tool.label ? "active-tool" : ""}`}
-            onClick={() => setActiveTool(tool.label)}
-            style={{ color: '#ffffff' }}
-          >
-            {tool.icon}<br />{tool.label}
-          </div>
-        ))}
-      </div>
+  // Function to add a new policy to Custom Policies
+  const addCustomPolicy = (newPolicy) => {
+    setPoliciesNodes(prev => {
+      return prev.map(policy => {
+        if (policy.label === 'Custom Policies') {
+          return {
+            ...policy,
+            subPoliciesNodes: [...policy.subPoliciesNodes, ...newPolicy.subPoliciesNodes]
+          };
+        }
+        return policy;
+      });
+    });
+  };
 
-      <div className="policy-subtools">
-        {policiesNodes.map((tool) => (
-          activeTool === tool.label && (
-            <div className="subtool-group" key={tool.label}>
-              {tool.subPoliciesNodes.map((subTool) => (
-                <button
-                  key={subTool.label}
-                  className={`draggable-node ${tool.type}`}
-                  style={{ justifyContent: 'center', border: `2px solid ${tool.color}`, backgroundColor: '#6c757d', color: '#ffffff' }}
-                  onDragStart={(event) => onDragStart(event, subTool.label, subTool.type, tool.color)}
-                  draggable
-                >
-                  {subTool.label}
-                </button>
-              ))}
+  return (
+    <div>
+      <div 
+        className="policies-container" 
+        ref={policiesContainerRef} 
+        style={{ 
+          width: `${widthPercentage}%`,
+          position: 'absolute',
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          cursor: isDragging ? 'grabbing' : 'grab'
+        }}
+        onMouseDown={handleContainerMouseDown}
+      >
+        <div className="resizer" style={{ cursor: 'ew-resize', width: '10px', height: '100%', backgroundColor: 'transparent', position: 'absolute', right: '0' }}></div>
+        <div className="policy-tools-list">
+          {policiesNodes.map((tool) => (
+            <div
+              key={tool.label}
+              className={`tool-item ${activeTool === tool.label ? "active-tool" : ""}`}
+              onClick={() => setActiveTool(tool.label)}
+              style={{ color: '#ffffff' }}
+            >
+              {tool.icon}<br />{tool.label}
             </div>
-          )
-        ))}
+          ))}
+        </div>
+
+        <div className="policy-subtools">
+          {policiesNodes.map((tool) => (
+            activeTool === tool.label && (
+              <div className="subtool-group" key={tool.label}>
+                {tool.subPoliciesNodes.map((subTool) => (
+                  <button
+                    key={subTool.label}
+                    className={`draggable-node ${tool.type}`}
+                    style={{ justifyContent: 'center', border: `2px solid ${tool.color}`, backgroundColor: '#6c757d', color: '#ffffff' }}
+                    onDragStart={(event) => onDragStart(event, subTool.label, subTool.type, tool.color)}
+                    draggable
+                  >
+                    {subTool.label}
+                  </button>
+                ))}
+              </div>
+            )
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -1,9 +1,10 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
-import { FaFolder, FaHistory,FaFolderOpen, FaFile, FaPlus, FaDownload, FaTrash, FaEllipsisH, FaCalendarAlt, FaEnvelope, FaGlobe, FaPencilAlt, FaSave, FaTimes, FaSearch, FaChevronDown, FaChevronUp, FaEdit, FaArrowLeft, FaChevronRight, FaArrowRight, FaCalendarDay, FaCheck } from 'react-icons/fa';
+import { FaFolder, FaHistory,FaFolderOpen, FaFile, FaPlus, FaDownload, FaTrash, FaEllipsisH, FaCalendarAlt, FaEnvelope, FaGlobe, FaPencilAlt, FaSave, FaTimes, FaSearch, FaChevronDown, FaChevronUp, FaEdit, FaArrowLeft, FaChevronRight, FaArrowRight, FaCalendarDay, FaCheck, FaBug } from 'react-icons/fa';
 import { ThemeContext } from '../../context/ThemeContext';
 import '../../styles/Investigations.css';
 import { format } from 'date-fns';
 import CustomDateRangePicker from '../DateRangePicker/DateRangePicker';
+
 
 interface DateRange {
   startDate: string;
@@ -52,6 +53,23 @@ interface UserJourneyEvent {
   action: string;
   additionalInfo: string;
 }
+
+// Define PolicyNode type
+interface SubPolicy {
+  label: string;
+  type: string;
+}
+
+interface PolicyNode {
+  id: string; // Add id field
+  label: string;
+  color: string;
+  subPoliciesNodes: SubPolicy[];
+  icon: React.ReactNode;
+  description: string;
+}
+
+export const costumePolicies:SubPolicy[] = [];
 
 const Investigations: React.FC = () => {
   const { darkMode, toggleDarkMode } = useContext(ThemeContext);
@@ -1466,6 +1484,7 @@ const Investigations: React.FC = () => {
           </button>
         </div>
         
+        
         <div className="leads-container">
           <div className="leads-header">
             <h3>Suspicious Activities Detected</h3>
@@ -1646,6 +1665,31 @@ const Investigations: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Add Apply Policy Button */}
+        <button className="apply-policy-button" onClick={generatePolicies}>
+          Apply Policy
+        </button>
+        {/* Display generated policies */}
+        {generatedPolicies.length > 0 && (
+          <div className="generated-policies">
+            <h3>Generated Policies</h3>
+            {generatedPolicies.map((policy, index) => (
+              <div key={index} className="policy-item">
+                <h4>{policy.label}</h4>
+                <p>{policy.description}</p>
+                <button onClick={() => addPolicyToCustom(policy)}>Add to Custom Policies</button>
+              </div>
+            ))}
+          </div>
+        )}
+        {/* Notification */}
+        {notification && (
+          <div className={`notification ${notificationType}`}>
+            {notification}
+          </div>
+        )}
+      
       </div>
     );
   };
@@ -3065,6 +3109,50 @@ const Investigations: React.FC = () => {
   )}
 
   // Do the same for the other menus (folder menu and new item menu)
+
+  // New state to hold generated policies
+  const [generatedPolicies, setGeneratedPolicies] = useState<PolicyNode[]>([]);
+  const [notification, setNotification] = useState<string | null>(null);
+  // Add a new state for notification type
+  const [notificationType, setNotificationType] = useState<'success' | 'error' | null>(null);
+
+  // Function to generate policies from suspicious leads
+  const generatePolicies = () => {
+    const newPolicies: PolicyNode[] = suspiciousLeads.slice(0, Math.floor(Math.random() * 3) + 2).map(lead => ({
+      id: `policy-${Date.now()}-${Math.random()}`, // Generate a unique ID
+      label: `Policy for ${lead.type}`,
+      color: '#8B0000',
+      subPoliciesNodes: [
+        { label: `Monitor ${lead.asset}`, type: 'default' },
+        { label: `Alert on ${lead.type}`, type: 'default' }
+      ],
+      icon: <FaBug color="#8B0000" />,
+      description: `Policy to monitor and alert on ${lead.type} involving ${lead.asset}.`
+    }));
+
+    setGeneratedPolicies(newPolicies);
+  };
+
+  // Function to add a policy to the custom policies
+  const addPolicyToCustom = (policy: PolicyNode) => {
+    policy.subPoliciesNodes.forEach((subPolicy) => {
+      const exists = costumePolicies.some(existingPolicy => existingPolicy.label === subPolicy.label);
+      if (!exists) {
+        costumePolicies.push(subPolicy);
+        setNotification("Policy added!");
+        setNotificationType('success');
+      } else {
+        setNotification("Policy already exists!");
+        setNotificationType('error');
+      }
+    });
+
+    console.log(costumePolicies);
+    setTimeout(() => {
+      setNotification(null);
+      setNotificationType(null);
+    }, 1500);
+  };
 
   return (
     <div className="investigations-container">
