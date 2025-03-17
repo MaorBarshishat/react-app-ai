@@ -4,9 +4,6 @@ import { ThemeContext } from '../../context/ThemeContext';
 import '../../styles/Investigations.css';
 import { format } from 'date-fns';
 import CustomDateRangePicker from '../DateRangePicker/DateRangePicker';
-import Alert from '@mui/material/Alert';
-import Stack from '@mui/material/Stack';
-
 
 interface DateRange {
   startDate: string;
@@ -60,6 +57,8 @@ interface UserJourneyEvent {
 interface SubPolicy {
   label: string;
   type: string;
+  id?: string; // Add this property
+  subPoliciesNodes?: NodeType[]; // Add this property
 }
 
 interface PolicyNode {
@@ -73,9 +72,14 @@ interface PolicyNode {
 
 export const costumePolicies:SubPolicy[] = [];
 
-const Investigations: React.FC = () => {
+interface MainNavigationProps {
+  activeTab: string;
+  setActiveTab: (tab: 'policies' | 'investigations' | 'signals') => void;
+}
+
+const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => {
+
   const { darkMode, toggleDarkMode } = useContext(ThemeContext);
-  
   // Move ALL state variables to the top of the component
   const [folderData, setFolderData] = useState<InvestigationFolder[]>([
     {
@@ -1451,6 +1455,11 @@ const Investigations: React.FC = () => {
 
   // Update the viewInvestigationResults function to display the results
   const renderInvestigationResults = () => {
+    // Add this check at the beginning of the function
+    if (!selectedItem) {
+      return <div>No investigation selected</div>;
+    }
+    
     // Calculate statistics for the summary
     const totalLeads = suspiciousLeads.length;
     const highRiskLeads = suspiciousLeads.filter(lead => lead.type === 'Data Exfiltration' || lead.type === 'Unauthorized Access').length;
@@ -1477,6 +1486,25 @@ const Investigations: React.FC = () => {
       { name: "Payment Gateway Logs", reliability: "high", updated: "5 min delay", coverage: "97%" }
     ];
     
+    // Add the risk factors
+    const riskFactors = [
+      "Multiple failed login attempts",
+      "Access from unusual geolocation",
+      "Activity outside normal business hours",
+      "Abnormal data transfer patterns"
+    ];
+
+    // Get risk label function
+    const getRiskLabel = (score: number): string => {
+      if (score >= 80) return "Critical";
+      if (score >= 60) return "High";
+      if (score >= 40) return "Medium";
+      return "Low";
+    };
+
+    // Inside renderInvestigationResults, add this with your other constants
+    const riskScore = 78; // Example risk score, adjust as needed
+
     return (
       <div className="investigation-results">
         <div className="results-header">
@@ -1485,8 +1513,7 @@ const Investigations: React.FC = () => {
             <FaArrowRight />
           </button>
         </div>
-        
-        
+
         <div className="leads-container">
           <div className="leads-header">
             <h3>Suspicious Activities Detected</h3>
@@ -1515,14 +1542,14 @@ const Investigations: React.FC = () => {
             <table className="leads-table">
               <thead>
                 <tr>
-                  <th style={{ width: '50px' }}>#</th>
-                  <th style={{ width: '30px' }}></th> {/* Toggle column */}
-                  <th>Asset</th>
+                  <th style={{ width: '5%' }}>#</th>
+                  <th style={{ width: '5%' }}></th> {/* Toggle column */}
+                  <th style={{ width: '20%' }}>Asset</th>
                   <th>Type</th>
                   <th>From</th>
                   <th>To</th>
-                  <th>Active Apps</th>
-                  <th>Supportive Data</th>
+                  <th style={{ width: '30%' }}>Active Apps</th>
+                  <th style={{ width: '50%' }}>Supportive Data</th>
                 </tr>
               </thead>
               <tbody>
@@ -1589,7 +1616,7 @@ const Investigations: React.FC = () => {
               </tbody>
             </table>
           </div>
-          
+
           <div className="table-actions">
             <button className="export-csv-button" onClick={() => exportToCSV()}>
               <FaDownload /> Export CSV
@@ -1612,7 +1639,7 @@ const Investigations: React.FC = () => {
                 ))}
               </div>
             </div>
-            
+
             <div className="abnormal-activities-section">
               <h3 className="section-title">ABNORMAL ACTIVITIES</h3>
               <table className="activities-table">
@@ -1668,10 +1695,11 @@ const Investigations: React.FC = () => {
           </div>
         </div>
 
-        {/* Add Apply Policy Button */}
+        {/* Generate Policies button */}
         <button className="apply-policy-button" onClick={generatePolicies}>
-          Apply Policy
+          Generate Policies
         </button>
+
         {/* Display generated policies */}
         {generatedPolicies.length > 0 && (
           <div className="generated-policies">
@@ -1680,24 +1708,18 @@ const Investigations: React.FC = () => {
               <div key={index} className="policy-item">
                 <h4>{policy.label}</h4>
                 <p>{policy.description}</p>
-                <button onClick={() => addPolicyToCustom(policy)}>Add to Custom Policies</button>
+                <div className="policy-item-buttons">
+                  <button 
+                    className="watch-signal-button"
+                    onClick={() => navigateToSignals(policy)}
+                  >
+                    Watch Signal
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         )}
-        {/* Notification */}
-        {notification && (
-              <Stack sx={{ position: 'fixed',
-                top: '10%', // Adjust this value for desired vertical spacing
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 1300, // MUI Snackbar default zIndex is 1000
-               maxWidth: '25%', margin: 'auto' }} spacing={2}>
-
-          <Alert variant="filled" severity={notificationType}>{notification}</Alert>
-        </Stack>
-        )}
-      
       </div>
     );
   };
@@ -3069,24 +3091,7 @@ const Investigations: React.FC = () => {
     }
   }, [showNewItemMenu.show, newRootButton]);
 
-  // 2. Similarly update the folder context menu handler:
-  const handleFolderContextMenu = (e: React.MouseEvent, folderId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Get accurate position including scroll
-    const rect = e.currentTarget.getBoundingClientRect();
-    
-    // Position menu right next to the folder item
-    setMenuPosition({
-      top: rect.top,
-      left: rect.left
-          });
-    
-    setShowFolderMenu({ show: true, folderId });
-    setOverlayVisible(true);
-  };
-
+  
   // 4. Make sure the file item component uses the handler correctly (in the render function)
   <div className="file-item-actions">
     <button 
@@ -3120,10 +3125,7 @@ const Investigations: React.FC = () => {
 
   // New state to hold generated policies
   const [generatedPolicies, setGeneratedPolicies] = useState<PolicyNode[]>([]);
-  const [notification, setNotification] = useState<string | null>(null);
-  // Add a new state for notification type
-  const [notificationType, setNotificationType] = useState<'success' | 'error' >('success');
-
+  
   // Function to generate policies from suspicious leads
   const generatePolicies = () => {
     const newPolicies: PolicyNode[] = suspiciousLeads.slice(0, Math.floor(Math.random() * 3) + 2).map(lead => ({
@@ -3145,38 +3147,67 @@ const Investigations: React.FC = () => {
     setGeneratedPolicies(newPolicies);
   };
 
-  // Function to add a policy to the custom policies
-  const addPolicyToCustom = (policy: PolicyNode) => {
-    policy.subPoliciesNodes.forEach((subPolicy) => {
-      const exists = costumePolicies.some(existingPolicy => existingPolicy.label === subPolicy.label);
-      if (!exists) {
-        costumePolicies.push(subPolicy);
-        setNotification("Policy added!");
-        setNotificationType('success');
-      } else {
-        setNotification("Policy already exists!");
-        setNotificationType('error');
-      }
-    });
-
-    console.log(costumePolicies);
-    setTimeout(() => {
-      setNotification(null);
-      setNotificationType('success');
-    }, 1500);
-  };
-
+  
   // Add this right after the existing code for generatePolicies function
   useEffect(() => {
     if (generatedPolicies.length > 0) {
-      // Find the last policy item and scroll to it
-      const policyItems = document.querySelectorAll('.policy-item');
-      if (policyItems.length > 0) {
-        const lastPolicyItem = policyItems[policyItems.length - 1];
-        lastPolicyItem.scrollIntoView({ behavior: 'smooth' });
-      }
+      // Give time for the DOM to update before scrolling
+      setTimeout(() => {
+        const generatedPoliciesElement = document.querySelector('.generated-policies');
+        if (generatedPoliciesElement) {
+          generatedPoliciesElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start'  // Ensures we scroll to the top of the element
+          });
+          
+          // Additional scroll to ensure it's visible
+          window.scrollBy({
+            top: -80,  // Offset to account for any headers
+            behavior: 'smooth'
+          });
+        }
+      }, 100);
     }
   }, [generatedPolicies]);
+
+  // Add this function to navigate to signals
+  const navigateToSignals = (policy: PolicyNode) => {
+    // Store the selected policy in localStorage for access in Signals component
+    localStorage.setItem('selectedPolicy', JSON.stringify(policy));
+    
+    setActiveTab('signals');
+  };
+
+  // Fix the renderUserJourney function if it's incomplete
+  const renderUserJourney = (leadId: string) => {
+    const events = getJourneyEventsForLead(leadId);
+    
+    return (
+      <div className="user-journey">
+        <h4>User Journey Timeline</h4>
+        <table className="journey-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Time Diff</th>
+              <th>Action</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {events.map((event, index) => (
+              <tr key={index} className={index % 2 === 0 ? 'even-row' : 'odd-row'}>
+                <td>{event.time}</td>
+                <td>{event.timeDiff}</td>
+                <td>{event.action}</td>
+                <td>{event.additionalInfo}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
 
   return (
     <div className="investigations-container">

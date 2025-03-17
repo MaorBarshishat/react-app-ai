@@ -101,7 +101,8 @@ const Policies = () => {
   // Existing resize functionality
   useEffect(() => {
     const handleMouseMove = (e) => {
-      const newWidth = (e.clientX / window.innerWidth) * 100; // Calculate width as a percentage
+      const newWidth = ((e.clientX-position.x) / window.innerWidth) * 100; // Calculate width as a percentage
+      console.log(e.clientX , window.innerWidth, position.x, newWidth);
       if (newWidth > 10 && newWidth < 100) { // Set minimum and maximum width constraints
         setWidthPercentage(newWidth);
       }
@@ -119,6 +120,7 @@ const Policies = () => {
 
     const resizer = policiesContainerRef.current?.querySelector('.resizer');
     if (resizer) {
+
       resizer.addEventListener('mousedown', handleMouseDown);
     }
 
@@ -127,23 +129,7 @@ const Policies = () => {
         resizer.removeEventListener('mousedown', handleMouseDown);
       }
     };
-  }, [policiesContainerRef]);
-
-  // Function to add a new policy to Custom Policies
-  const addCustomPolicy = (newPolicy) => {
-    setPoliciesNodes(prev => {
-      return prev.map(policy => {
-        if (policy.label === 'Custom Policies') {
-          return {
-            ...policy,
-            subPoliciesNodes: [...policy.subPoliciesNodes, ...newPolicy.subPoliciesNodes]
-          };
-        }
-        return policy;
-      });
-    });
-  };
-
+  }, [policiesContainerRef, position.x]);
   return (
     <div>
       <div 

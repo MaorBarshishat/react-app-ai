@@ -29,7 +29,7 @@ const App: React.FC = () => {
           </ReactFlowProvider>
         );
       case 'investigations':
-        return <Investigations />;
+        return <Investigations  activeTab={activeTab} setActiveTab={setActiveTab} />;
       case 'signals':
         return <Signals />;
       default:
