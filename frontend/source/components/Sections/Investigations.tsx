@@ -4,6 +4,8 @@ import { ThemeContext } from '../../context/ThemeContext';
 import '../../styles/Investigations.css';
 import { format } from 'date-fns';
 import CustomDateRangePicker from '../DateRangePicker/DateRangePicker';
+import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
 
 
 interface DateRange {
@@ -1685,9 +1687,15 @@ const Investigations: React.FC = () => {
         )}
         {/* Notification */}
         {notification && (
-          <div className={`notification ${notificationType}`}>
-            {notification}
-          </div>
+              <Stack sx={{ position: 'fixed',
+                top: '10%', // Adjust this value for desired vertical spacing
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 1300, // MUI Snackbar default zIndex is 1000
+               maxWidth: '25%', margin: 'auto' }} spacing={2}>
+
+          <Alert variant="filled" severity={notificationType}>{notification}</Alert>
+        </Stack>
         )}
       
       </div>
@@ -3114,7 +3122,7 @@ const Investigations: React.FC = () => {
   const [generatedPolicies, setGeneratedPolicies] = useState<PolicyNode[]>([]);
   const [notification, setNotification] = useState<string | null>(null);
   // Add a new state for notification type
-  const [notificationType, setNotificationType] = useState<'success' | 'error' | null>(null);
+  const [notificationType, setNotificationType] = useState<'success' | 'error' >('success');
 
   // Function to generate policies from suspicious leads
   const generatePolicies = () => {
@@ -3129,6 +3137,10 @@ const Investigations: React.FC = () => {
       icon: <FaBug color="#8B0000" />,
       description: `Policy to monitor and alert on ${lead.type} involving ${lead.asset}.`
     }));
+    window.scrollTo({
+      top: document.documentElement.scrollHeight, // Scroll to the bottom of the document
+      behavior: 'smooth' // Smooth scrolling effect
+    });
 
     setGeneratedPolicies(newPolicies);
   };
@@ -3150,9 +3162,21 @@ const Investigations: React.FC = () => {
     console.log(costumePolicies);
     setTimeout(() => {
       setNotification(null);
-      setNotificationType(null);
+      setNotificationType('success');
     }, 1500);
   };
+
+  // Add this right after the existing code for generatePolicies function
+  useEffect(() => {
+    if (generatedPolicies.length > 0) {
+      // Find the last policy item and scroll to it
+      const policyItems = document.querySelectorAll('.policy-item');
+      if (policyItems.length > 0) {
+        const lastPolicyItem = policyItems[policyItems.length - 1];
+        lastPolicyItem.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, [generatedPolicies]);
 
   return (
     <div className="investigations-container">

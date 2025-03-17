@@ -45,7 +45,6 @@ const DnDFlow = () => {
   const onDrop = useCallback((event) => {
     event.preventDefault();
     if (!type) return; // Ensure the type is defined before proceeding
-
     const position = screenToFlowPosition({
       x: event.clientX,
       y: event.clientY,
@@ -54,6 +53,7 @@ const DnDFlow = () => {
     const newNode = {
       id: getId(nodes.length), // Get unique ID for the node
       type,
+      position,
       color,
       position,
       data: { label: `${label}` },
@@ -61,7 +61,7 @@ const DnDFlow = () => {
         border: `2px solid ${color}`,
       },
     };
-
+    
     setNodes((nds) => nds.concat(newNode)); // Add the new node to state
   }, [screenToFlowPosition, type, label, color, nodes.length, setNodes]);
 
