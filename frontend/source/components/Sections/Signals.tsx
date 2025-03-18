@@ -328,30 +328,6 @@ const Signals: React.FC = () => {
             </div>
           </div>
         </div>
-        
-        {/* Performance section - half width */}
-        <div className="signal-section">
-          <h2>PERFORMANCE</h2>
-          <div className="performance-metrics">
-            <div className="metric-card">
-              <div className="metric-value">{performance.signalStrength}/10</div>
-              <div className="metric-label">Signal Strength</div>
-            </div>
-            <div className="metric-card">
-              <div className="metric-value">{performance.accuracy}</div>
-              <div className="metric-label">Accuracy</div>
-            </div>
-            <div className="metric-card">
-              <div className="metric-value">{performance.precision}</div>
-              <div className="metric-label">Precision</div>
-            </div>
-            <div className="metric-card">
-              <div className="metric-value">{performance.recall}</div>
-              <div className="metric-label">Recall</div>
-            </div>
-          </div>
-        </div>
-        
         {/* Description section - full width */}
         <div className="signal-section">
           <h2>DESCRIPTION</h2>
@@ -389,7 +365,31 @@ const Signals: React.FC = () => {
             <p>{selectedPolicy.description}</p>
           )}
         </div>
+
+        {/* Performance section - half width */}
+        <div className="signal-section">
+          <h2>PERFORMANCE</h2>
+          <div className="performance-metrics">
+            <div className="metric-card">
+              <div className="metric-value">{performance.signalStrength}/10</div>
+              <div className="metric-label">Signal Strength</div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-value">{performance.accuracy}</div>
+              <div className="metric-label">Accuracy</div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-value">{performance.precision}</div>
+              <div className="metric-label">Precision</div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-value">{performance.recall}</div>
+              <div className="metric-label">Recall</div>
+            </div>
+          </div>
+        </div>
         
+                
         {/* Functionality section - full width */}
         <div className="signal-section full-width">
           <h2>FUNCTIONALITY</h2>
