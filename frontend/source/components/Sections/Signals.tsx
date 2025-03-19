@@ -306,90 +306,93 @@ const Signals: React.FC = () => {
       </div>
       
       <div className="signal-detail-container">
-        {/* Profile section - half width */}
-        <div className="signal-section">
-          <h2>PROFILE</h2>
-          <div className="profile-details">
-            <div className="profile-item">
-              <span className="item-label">Created Date:</span>
-              <span className="item-value">{new Date().toLocaleDateString()}</span>
-            </div>
-            <div className="profile-item">
-              <span className="item-label">Active Since:</span>
-              <span className="item-value">{new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}</span>
-            </div>
-            <div className="profile-item">
-              <span className="item-label">Regression Data:</span>
-              <span className="item-value">Last updated: {new Date().toLocaleDateString()}</span>
-            </div>
-            <div className="profile-item">
-              <span className="item-label">Triggered:</span>
-              <span className="item-value">{Math.floor(Math.random() * 20) + 5} times</span>
+        {/* Three sections in one row */}
+        <div className="three-column-row">
+          {/* Profile section - one-third width */}
+          <div className="signal-section">
+            <h2>PROFILE</h2>
+            <div className="profile-details">
+              <div className="profile-item">
+                <span className="item-label">Created Date:</span>
+                <span className="item-value">{new Date().toLocaleDateString()}</span>
+              </div>
+              <div className="profile-item">
+                <span className="item-label">Active Since:</span>
+                <span className="item-value">{new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}</span>
+              </div>
+              <div className="profile-item">
+                <span className="item-label">Regression Data:</span>
+                <span className="item-value">Last updated: {new Date().toLocaleDateString()}</span>
+              </div>
+              <div className="profile-item">
+                <span className="item-label">Triggered:</span>
+                <span className="item-value">{Math.floor(Math.random() * 20) + 5} times</span>
+              </div>
             </div>
           </div>
-        </div>
-        {/* Description section - full width */}
-        <div className="signal-section">
-          <h2>DESCRIPTION</h2>
-          {!isEditingDescription ? (
-              <button className="section-edit-button" onClick={() => setIsEditingDescription(true)}>
-                <FaEdit />
-              </button>
+          
+          {/* Description section - one-third width */}
+          <div className="signal-section">
+            <h2>DESCRIPTION</h2>
+            {!isEditingDescription ? (
+                <button className="section-edit-button" onClick={() => setIsEditingDescription(true)}>
+                  <FaEdit />
+                </button>
+              ) : (
+                <button className="section-save-button" onClick={() => {
+                  setIsEditingDescription(false);
+                  // Save description changes
+                  handleSaveDescription();
+                }}>
+                  <FaSave />
+                </button>
+              )}
+
+            <div className="section-header">
+              <h3>Signal Details</h3>
+            </div>
+            {isEditingDescription ? (
+              <textarea
+                className="description-editor"
+                value={editedPolicy?.description || ""}
+                onChange={(e) => {
+                  if (editedPolicy) {
+                    setEditedPolicy({
+                      ...editedPolicy,
+                      description: e.target.value
+                    });
+                  }
+                }}
+              />
             ) : (
-              <button className="section-save-button" onClick={() => {
-                setIsEditingDescription(false);
-                // Save description changes
-                handleSaveDescription();
-              }}>
-                <FaSave />
-              </button>
+              <p>{selectedPolicy.description}</p>
             )}
-
-          <div className="section-header">
-            <h3>Signal Details</h3>
           </div>
-          {isEditingDescription ? (
-            <textarea
-              className="description-editor"
-              value={editedPolicy?.description || ""}
-              onChange={(e) => {
-                if (editedPolicy) {
-                  setEditedPolicy({
-                    ...editedPolicy,
-                    description: e.target.value
-                  });
-                }
-              }}
-            />
-          ) : (
-            <p>{selectedPolicy.description}</p>
-          )}
-        </div>
 
-        {/* Performance section - half width */}
-        <div className="signal-section">
-          <h2>PERFORMANCE</h2>
-          <div className="performance-metrics">
-            <div className="metric-card">
-              <div className="metric-value">{performance.signalStrength}/10</div>
-              <div className="metric-label">Signal Strength</div>
-            </div>
-            <div className="metric-card">
-              <div className="metric-value">{performance.accuracy}</div>
-              <div className="metric-label">Accuracy</div>
-            </div>
-            <div className="metric-card">
-              <div className="metric-value">{performance.precision}</div>
-              <div className="metric-label">Precision</div>
-            </div>
-            <div className="metric-card">
-              <div className="metric-value">{performance.recall}</div>
-              <div className="metric-label">Recall</div>
+          {/* Performance section - one-third width */}
+          <div className="signal-section">
+            <h2>PERFORMANCE</h2>
+            <div className="performance-metrics">
+              <div className="metric-card">
+                <div className="metric-value">{performance.signalStrength}/10</div>
+                <div className="metric-label">Signal Strength</div>
+              </div>
+              <div className="metric-card">
+                <div className="metric-value">{performance.accuracy}</div>
+                <div className="metric-label">Accuracy</div>
+              </div>
+              <div className="metric-card">
+                <div className="metric-value">{performance.precision}</div>
+                <div className="metric-label">Precision</div>
+              </div>
+              <div className="metric-card">
+                <div className="metric-value">{performance.recall}</div>
+                <div className="metric-label">Recall</div>
+              </div>
             </div>
           </div>
         </div>
         
-                
         {/* Functionality section - full width */}
         <div className="signal-section full-width">
           <h2>FUNCTIONALITY</h2>
