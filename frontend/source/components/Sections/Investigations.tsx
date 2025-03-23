@@ -1,9 +1,10 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
-import { FaFolder, FaHistory,FaFolderOpen, FaFile, FaPlus, FaDownload, FaTrash, FaEllipsisH, FaCalendarAlt, FaEnvelope, FaGlobe, FaPencilAlt, FaSave, FaTimes, FaSearch, FaChevronDown, FaChevronUp, FaEdit, FaArrowLeft, FaChevronRight, FaArrowRight, FaCalendarDay, FaCheck, FaBug } from 'react-icons/fa';
+import { FaFolder, FaHistory,FaFolderOpen, FaPlus, FaDownload, FaTrash, FaEllipsisH, FaCalendarAlt, FaEnvelope, FaGlobe, FaPencilAlt, FaSave, FaTimes, FaSearch, FaChevronDown, FaChevronUp, FaEdit, FaArrowLeft, FaChevronRight, FaArrowRight, FaCalendarDay, FaCheck, FaBug } from 'react-icons/fa';
 import { ThemeContext } from '../../context/ThemeContext';
 import '../../styles/Investigations.css';
 import { format } from 'date-fns';
 import CustomDateRangePicker from '../DateRangePicker/DateRangePicker';
+import ContentPasteSearchIcon from '@mui/icons-material/ContentPasteSearch';
 
 interface DateRange {
   startDate: string;
@@ -53,21 +54,22 @@ interface UserJourneyEvent {
   additionalInfo: string;
 }
 
+// Define NodeType interface
+interface NodeType {
+  label: string;
+  title?: string;
+  type: 'string' | 'stringInput' | 'timeInput' | 'operator';
+  value?: string;
+  operatorType?: string;
+}
+
 // Define PolicyNode type
 interface SubPolicy {
   label: string;
   type: string;
   id?: string; // Add this property
   subPoliciesNodes?: NodeType[]; // Add this property
-}
-
-interface PolicyNode {
-  id: string; // Add id field
-  label: string;
-  color: string;
-  subPoliciesNodes: SubPolicy[];
-  icon: React.ReactNode;
-  description: string;
+  description?: string; // Add this property for Signals component
 }
 
 export const costumePolicies:SubPolicy[] = [];
@@ -1300,7 +1302,7 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
             onClick={() => handleSelectItem(file)}
           >
             <div className="file-content">
-              <FaFile className="file-icon" />
+              <ContentPasteSearchIcon className="file-icon" />
               <span className="file-name">{file.name}</span>
             <button 
                 className="action-icon"
@@ -2552,7 +2554,7 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
             setShowNewItemMenu({ show: false });
           }}
         >
-          <FaFile /> New Investigation
+          <ContentPasteSearchIcon /> New Investigation
         </button>
       </div>
     );
@@ -2591,30 +2593,33 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
     return folders.map(folder => {
       if (folder.id === parentId) {
         // Add item to this folder
-          return {
-            ...folder,
+        return {
+          ...folder,
           isOpen: true, // Open the folder when adding an item
-          children: folder.children.filter(child => child.type === 'folder').concat(
-            [newItem] as any
-          ).concat(
-            folder.children.filter(child => child.type === 'file') as any
-          )
-          };
+          children: [
+            ...folder.children.filter(child => child.type === 'folder'),
+            newItem,
+            ...folder.children.filter(child => child.type === 'file')
+          ]
+        };
       } else if (folder.children.length > 0) {
         // Look in children folders
         return {
           ...folder,
-          children: updateFolderTreeWithNewItem(
-            folder.children.filter(child => child.type === 'folder') as InvestigationFolder[], 
-            parentId, 
-            newItem
-          ).concat(folder.children.filter(child => child.type === 'file'))
+          children: [
+            ...updateFolderTreeWithNewItem(
+              folder.children.filter(child => child.type === 'folder') as InvestigationFolder[], 
+              parentId, 
+              newItem
+            ),
+            ...folder.children.filter(child => child.type === 'file')
+          ]
         };
       }
       return folder;
-      });
-    };
-    
+    });
+  };
+
   // Add the handleNewFile function
   const handleNewFile = (parentId: string | null) => {
     // Get user input for the new file
@@ -2811,7 +2816,7 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
         onClick={() => selectFile(file)}
       >
         <div className="file-content">
-          <FaFile className="file-icon" />
+          <ContentPasteSearchIcon className="file-icon" />
           <span className="file-name">{file.name}</span>
         </div>
         <button 
@@ -3291,7 +3296,7 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
               setOverlayVisible(false);
             }}
           >
-            <FaFile /> New Investigation
+            <ContentPasteSearchIcon /> New Investigation
           </button>
           <button 
             className="menu-item delete-action"
@@ -3427,7 +3432,7 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
             setOverlayVisible(false);
           }}
         >
-          <FaFile /> New Investigation
+          <ContentPasteSearchIcon /> New Investigation
         </button>
       </div>
     )}

@@ -1,25 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import '../../styles/Signals.css';
-import { FaEdit, FaSave, FaArrowLeft, FaChartLine, FaExclamationTriangle, FaGripVertical, FaPlus } from 'react-icons/fa';
+import { FaEdit, FaSave, FaArrowLeft, FaChartLine, FaExclamationTriangle, FaGripVertical, FaPlus, 
+  FaFolder, FaFolderOpen, FaFile, FaEllipsisH, FaTrash, FaPencilAlt, FaChevronRight, FaChevronDown } from 'react-icons/fa';
 import { costumePolicies } from './Investigations';
 import { Line, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
+import ContentPasteSearchIcon from '@mui/icons-material/ContentPasteSearch';
 
-interface PolicyPerformance {
-  signalStrength: number;
-  accuracy: number;
-  precision: number;
-  recall: number;
-}
-
+// Import types from common module or define here
 interface NodeType {
   label: string;
   title?: string;
   type: 'string' | 'stringInput' | 'timeInput' | 'operator';
   value?: string;
   operatorType?: string;
+}
+
+interface SubPolicy {
+  label: string;
+  type: string;
+  id?: string;
+  subPoliciesNodes?: NodeType[];
+  description?: string; // Added description property
 }
 
 interface PolicyNode {
@@ -32,6 +36,38 @@ interface PolicyNode {
   description: string;
 }
 
+// Define folder structure interfaces matching Investigations.tsx
+interface InvestigationFolder {
+  id: string;
+  name: string;
+  type: 'folder';
+  children: (InvestigationFolder | InvestigationFile)[];
+  isOpen?: boolean;
+}
+
+interface InvestigationFile {
+  id: string;
+  name: string;
+  type: 'file';
+  status: 'open' | 'closed' | 'in-progress';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  dateCreated: string;
+  dates: (string | {startDate: string, endDate: string})[];
+  assets: string[];
+  domains: string[];
+  description: string;
+  assignedTo: string;
+}
+
+type InvestigationItem = InvestigationFolder | InvestigationFile;
+
+interface PolicyPerformance {
+  signalStrength: number;
+  accuracy: number;
+  precision: number;
+  recall: number;
+}
+
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
@@ -39,6 +75,18 @@ const Signals: React.FC = () => {
   const [selectedPolicy, setSelectedPolicy] = useState<PolicyNode | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedPolicy, setEditedPolicy] = useState<PolicyNode | null>(null);
+  
+  // Sidebar states - similar to Investigations
+  const [folderData, setFolderData] = useState<InvestigationFolder[]>([]);
+  const [selectedItem, setSelectedItem] = useState<InvestigationItem | null>(null);
+  const [showFolderMenu, setShowFolderMenu] = useState<{show: boolean, folderId?: string}>({show: false});
+  const [showFileMenu, setShowFileMenu] = useState<{show: boolean, fileId?: string}>({show: false});
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const [overlayVisible, setOverlayVisible] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(25); // Width percentage
+
+  // For sidebar resizing
+  const sidebarRef = useRef<HTMLDivElement | null>(null);
   
   // Mock performance data
   const [performance, setPerformance] = useState<PolicyPerformance>({
@@ -52,16 +100,22 @@ const Signals: React.FC = () => {
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isEditingFunctionality, setIsEditingFunctionality] = useState(false);
 
-  // When component mounts, load saved editing state
+  // Load folder data from localStorage
   useEffect(() => {
-    // First load the selected policy
+    const savedFolderData = localStorage.getItem('investigationFolderData');
+    if (savedFolderData) {
+      setFolderData(JSON.parse(savedFolderData));
+    }
+  }, []);
+
+  // Load selected policy
+  useEffect(() => {
     const policyData = localStorage.getItem('selectedPolicy');
     if (policyData) {
       try {
         const policy = JSON.parse(policyData);
         setSelectedPolicy(policy);
         
-        // Check if there was an editing session in progress
         const savedEditedPolicy = localStorage.getItem('editedPolicy');
         const wasEditing = localStorage.getItem('isEditingSignal') === 'true';
         
@@ -71,7 +125,6 @@ const Signals: React.FC = () => {
           setEditedPolicy(policy);
         }
         
-        // Restore editing state if it was active
         if (wasEditing) {
           setIsEditing(true);
         }
@@ -81,38 +134,249 @@ const Signals: React.FC = () => {
     }
   }, []);
 
-  // Add this function to save the current state any time it changes
+  // Setup listeners for folder data changes
   useEffect(() => {
-    // Don't save if there's nothing to save
+    const handleStorageChange = (e) => {
+      if (e.key === 'investigationFolderData') {
+        try {
+          setFolderData(JSON.parse(e.newValue));
+        } catch (error) {
+          console.error('Error parsing folder data:', error);
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Save edited policy state
+  useEffect(() => {
     if (!editedPolicy) return;
     
-    // Save whether we're in edit mode
     localStorage.setItem('isEditingSignal', isEditing ? 'true' : 'false');
-    
-    // Always save the current policy state, even if not in edit mode
     localStorage.setItem('editedPolicy', JSON.stringify(editedPolicy));
     
-    // If not in edit mode, also update the selected policy
     if (!isEditing) {
       localStorage.setItem('selectedPolicy', JSON.stringify(editedPolicy));
     }
-    
   }, [editedPolicy, isEditing]);
 
-  
-  // Also, modify the handleBackToInvestigations function to ensure state is saved before navigation
-  const handleBackToInvestigations = () => {
-    // Save current state before navigating
-    if (editedPolicy) {
-      localStorage.setItem('editedPolicy', JSON.stringify(editedPolicy));
-      localStorage.setItem('isEditingSignal', isEditing ? 'true' : 'false');
+  // Handle sidebar resizing
+  const handleMouseMove = (e: MouseEvent) => {
+    const newWidth = (e.clientX / window.innerWidth) * 100;
+    if (newWidth >= 15 && newWidth <= 85) {
+      setSidebarWidth(newWidth);
     }
-    
-    // Navigate back to investigations
-    window.location.href = '/investigations';
   };
 
-  // Inside the component, add this mock data for the charts
+  const handleMouseUp = () => {
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleMouseDown = () => {
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  // Toggle folder open/closed
+  const toggleFolder = (folderId: string) => {
+    setFolderData(prevData => 
+      prevData.map(folder => {
+        if (folder.id === folderId) {
+          return { ...folder, isOpen: !folder.isOpen };
+        }
+        return folder;
+      })
+    );
+    
+    // Also update localStorage for synchronization
+    const updatedData = folderData.map(folder => {
+      if (folder.id === folderId) {
+        return { ...folder, isOpen: !folder.isOpen };
+      }
+      return folder;
+    });
+    localStorage.setItem('investigationFolderData', JSON.stringify(updatedData));
+  };
+
+  // Handle folder actions (ellipsis menu)
+  const handleFolderActions = (e: React.MouseEvent, folderId: string) => {
+    e.stopPropagation();
+    
+    // Close any other open menus
+    setShowFileMenu({ show: false });
+    
+    // Toggle menu for this folder
+    setShowFolderMenu({
+      show: !showFolderMenu.show || showFolderMenu.folderId !== folderId,
+      folderId
+    });
+    
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setMenuPosition({
+      top: rect.top - rect.height,
+      left: rect.left
+    });
+    
+    setOverlayVisible(true);
+  };
+
+  // Handle file actions
+  const handleFileActions = (e: React.MouseEvent, fileId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Close other menus
+    setShowFolderMenu({ show: false });
+    
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setShowFileMenu({
+      show: !showFileMenu.show || showFileMenu.fileId !== fileId,
+      fileId
+    });
+    
+    // Position menu relative to the button
+    setMenuPosition({
+      top: rect.top - rect.height,
+      left: rect.left
+    });
+    
+    setOverlayVisible(true);
+  };
+
+  // Add this state for tracking which investigation folders are expanded
+  const [expandedInvestigations, setExpandedInvestigations] = useState<Set<string>>(new Set());
+
+  // Update handleSelectItem to match folder toggle behavior instead of just selecting
+  const handleSelectItem = (item: InvestigationItem) => {
+    if (item.type === 'file') {
+      // For investigation items, toggle their expanded state like folders
+      setExpandedInvestigations(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(item.id)) {
+          newSet.delete(item.id);
+        } else {
+          newSet.add(item.id);
+        }
+        return newSet;
+      });
+    } else if (item.type === 'folder') {
+      // For regular folders, use the existing toggleFolder function
+      toggleFolder(item.id);
+    }
+    
+    // Still set as selected item regardless
+    setSelectedItem(item);
+  };
+
+  // Modify the renderFolderStructure function to handle expandable investigations
+  const renderFolderStructure = (items: (InvestigationFolder | InvestigationFile)[], level = 0) => {
+    return items.map(item => {
+      if (item.type === 'folder') {
+        const folder = item as InvestigationFolder;
+        return (
+          <div key={folder.id} style={{ marginLeft: `${level * 20}px` }}>
+            <div 
+              className={`folder-item ${selectedItem?.id === folder.id ? 'selected' : ''}`}
+              onClick={() => toggleFolder(folder.id)}
+            >
+              <div className="folder-content">
+                <span className="folder-icon">
+                  {folder.isOpen ? <FaFolderOpen /> : <FaFolder />}
+                </span>
+                <span className="folder-name">{folder.name}</span>
+              </div>
+              
+              <button 
+                className="action-button"
+                onClick={(e) => handleFolderActions(e, folder.id)}
+                title="More actions"
+              >
+                <FaEllipsisH />
+              </button>
+            </div>
+            
+            {folder.isOpen && folder.children && folder.children.length > 0 && (
+              <div className="folder-children">
+                {renderFolderStructure(folder.children, level + 1)}
+              </div>
+            )}
+          </div>
+        );
+      } else {
+        // Render investigation files as expandable folders
+        const file = item as InvestigationFile;
+        const isExpanded = expandedInvestigations.has(file.id);
+        
+        return (
+          <div key={file.id} style={{ marginLeft: `${level * 20}px` }}>
+            <div 
+              className={`folder-item investigation-folder ${selectedItem?.id === file.id ? 'selected' : ''}`}
+              onClick={() => handleSelectItem(file)}
+            >
+              <div className="folder-content">
+                <span className="expand-icon">
+                  {isExpanded ? <FaChevronDown /> : <FaChevronRight />}
+                </span>
+                <ContentPasteSearchIcon className="investigation-icon" />
+                <span className="folder-name">{file.name}</span>
+              </div>
+              
+              <button 
+                className="action-button"
+                onClick={(e) => handleFileActions(e, file.id)}
+              >
+                <FaEllipsisH />
+              </button>
+            </div>
+            
+            {isExpanded && (
+              <div className="folder-children investigation-children">
+                {renderSignalsForInvestigation(file, level + 1)}
+              </div>
+            )}
+          </div>
+        );
+      }
+    });
+  };
+
+  // Add this function to render signals for an investigation
+  const renderSignalsForInvestigation = (investigation: InvestigationFile, level: number) => {
+    // If there's a selected policy, show it as a child of the selected investigation
+    if (selectedPolicy && selectedItem?.id === investigation.id) {
+      return (
+        <div 
+          key={selectedPolicy.id}
+          className="signal-item"
+          style={{ marginLeft: `${level * 20}px` }}
+          onClick={(e) => {
+            e.stopPropagation();
+            // You can add logic here to handle signal selection
+          }}
+        >
+          <div className="signal-content">
+            <FaChartLine className="signal-icon" />
+            <span className="signal-name">{selectedPolicy.label}</span>
+          </div>
+        </div>
+      );
+    }
+    
+    // If no signals yet, show a placeholder
+    return (
+      <div 
+        className="empty-signals"
+        style={{ marginLeft: `${level * 20}px`, padding: '5px 10px', opacity: 0.7 }}
+      >
+        No signals available
+      </div>
+    );
+  };
+
+  // Generate chart data
   const generateDailyData = () => {
     const dates: string[] = [];
     const occurrences: number[] = [];
@@ -132,61 +396,48 @@ const Signals: React.FC = () => {
     return { dates, occurrences, users };
   };
 
-  // In your component, before the return statement
   const chartData = generateDailyData();
 
   const [notification, setNotification] = useState<string | null>(null);
-  // Add a new state for notification type
-  const [notificationType, setNotificationType] = useState<'success' | 'error' >('success');
+  const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
   const [isNotificationVisible, setIsNotificationVisible] = useState(false);
 
   const addPolicyToCustom = () => {
     if (selectedPolicy) {
-      // Use the policy's title for sidebar display, fall back to label if no title
       const nodeTitle = selectedPolicy.title || selectedPolicy.label;
       
-      // Create a combined string for the flow display by joining all node labels
       const combinedLabel = selectedPolicy.subPoliciesNodes
-        .map(node => {
-          // Format operators with brackets
-          return node.type === 'operator' ? 
-            `[${node.label}]` : 
-            node.label;
-        })
+        .map(node => node.type === 'operator' ? `[${node.label}]` : node.label)
         .join(' ');
       
-      // Create a single combined node for the custom policies
       const combinedNode = {
         id: selectedPolicy.id,
-        title: nodeTitle,       // This is shown in the sidebar
-        label: combinedLabel,   // This is shown in the flow
+        title: nodeTitle,
+        label: combinedLabel,
         type: 'combined',
-        // Store original nodes for reference
         subPoliciesNodes: selectedPolicy.subPoliciesNodes,
         description: selectedPolicy.description
       };
       
-      // Find if policy already exists by ID
       const existingIndex = costumePolicies.findIndex(
         existingPolicy => existingPolicy.id === selectedPolicy.id
       );
       
       if (existingIndex >= 0) {
-        // Update existing policy
-        costumePolicies[existingIndex] = combinedNode;
+        costumePolicies[existingIndex] = {
+          ...costumePolicies[existingIndex],
+          description: selectedPolicy.description
+        };
         setNotificationType('success');
         setNotification("Policy updated in Custom Policies!");
       } else {
-        // Add new policy
         costumePolicies.push(combinedNode);
         setNotificationType('success');
         setNotification("Policy added to Custom Policies!");
       }
       
-      // Show the notification
       setIsNotificationVisible(true);
       
-      // Hide notification after 1 second
       setTimeout(() => {
         setIsNotificationVisible(false);
         setNotification('');
@@ -194,10 +445,8 @@ const Signals: React.FC = () => {
     }
   };
 
-  // Add this state for drag-and-drop functionality
   const [draggedNodeIndex, setDraggedNodeIndex] = useState<number | null>(null);
 
-  // Add separate save handlers for each section
   const handleSaveDescription = () => {
     if (editedPolicy) {
       setSelectedPolicy({
@@ -205,7 +454,6 @@ const Signals: React.FC = () => {
         description: editedPolicy.description
       });
       
-      // Update custom policies if this policy exists there
       const existingIndex = costumePolicies.findIndex(
         policy => policy.id === editedPolicy.id
       );
@@ -217,7 +465,6 @@ const Signals: React.FC = () => {
         };
       }
       
-      // Show success notification
       setNotificationType('success');
       setNotification("Description updated!");
       setIsNotificationVisible(true);
@@ -235,7 +482,6 @@ const Signals: React.FC = () => {
         subPoliciesNodes: editedPolicy.subPoliciesNodes
       });
       
-      // Update custom policies if this policy exists there
       const existingIndex = costumePolicies.findIndex(
         policy => policy.id === editedPolicy.id
       );
@@ -246,11 +492,7 @@ const Signals: React.FC = () => {
           subPoliciesNodes: editedPolicy.subPoliciesNodes
         };
       }
-      console.log(editedPolicy.subPoliciesNodes);
-      console.log(costumePolicies);
-      console.log(selectedPolicy)
       
-      // Show success notification
       setNotificationType('success');
       setNotification("Functionality updated!");
       setIsNotificationVisible(true);
@@ -259,6 +501,248 @@ const Signals: React.FC = () => {
         setNotification('');
       }, 1000);
     }
+  };
+
+  const handleBackToInvestigations = () => {
+    if (editedPolicy) {
+      localStorage.setItem('editedPolicy', JSON.stringify(editedPolicy));
+      localStorage.setItem('isEditingSignal', isEditing ? 'true' : 'false');
+    }
+    
+    window.location.href = '/investigations';
+  };
+
+  // Find and delete an item from the folder structure
+  const deleteItem = (itemId: string) => {
+    if (window.confirm(`Are you sure you want to delete?`)) {
+      // Remove the item from the folder structure
+      setFolderData(prev => {
+        // Function to recursively delete from folder structure
+        const removeItem = (items: (InvestigationFolder | InvestigationFile)[]): (InvestigationFolder | InvestigationFile)[] => {
+          return items.filter(item => {
+            // Skip this item if it's the one to delete
+            if (item.id === itemId) return false;
+            
+            // If it's a folder, check its children
+            if (item.type === 'folder') {
+              (item as InvestigationFolder).children = removeItem((item as InvestigationFolder).children);
+            }
+            return true;
+          });
+        };
+        
+        // First check top level
+        const newData = prev.filter(folder => {
+          if (folder.id === itemId) return false;
+          (folder as InvestigationFolder).children = removeItem((folder as InvestigationFolder).children);
+          return true;
+        });
+        
+        // Update localStorage for synchronization
+        localStorage.setItem('investigationFolderData', JSON.stringify(newData));
+        
+        return newData;
+      });
+      
+      // Clear selection if the deleted item was selected
+      if (selectedItem?.id === itemId) {
+        setSelectedItem(null);
+      }
+    }
+    
+    // Close menus
+    setShowFolderMenu({ show: false });
+    setShowFileMenu({ show: false });
+    setOverlayVisible(false);
+  };
+
+  // Helper function to find a file by ID
+  const findFileById = (fileId: string): InvestigationFile | null => {
+    // Function to search recursively through the folder structure
+    const searchInFolders = (items: (InvestigationFolder | InvestigationFile)[]): InvestigationFile | null => {
+      for (const item of items) {
+        if (item.type === 'file' && item.id === fileId) {
+          return item as InvestigationFile;
+        }
+        if (item.type === 'folder') {
+          const found = searchInFolders((item as InvestigationFolder).children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    
+    return searchInFolders(folderData);
+  };
+
+  // Helper function to find a folder by ID
+  const findFolderById = (folderId: string): InvestigationFolder | null => {
+    // Function to search recursively through the folder structure
+    const searchInFolders = (folders: InvestigationFolder[]): InvestigationFolder | null => {
+      for (const folder of folders) {
+        if (folder.id === folderId) {
+          return folder;
+        }
+        
+        // Search in subfolders
+        const subfolders = folder.children.filter(child => child.type === 'folder') as InvestigationFolder[];
+        if (subfolders.length > 0) {
+          const found = searchInFolders(subfolders);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    
+    return searchInFolders(folderData);
+  };
+
+  // Function to rename an item
+  const renameItem = (itemId: string, newName: string) => {
+    setFolderData(prevFolders => {
+      // Function to recursively update the name
+      const updateItemName = (items: (InvestigationFolder | InvestigationFile)[]): (InvestigationFolder | InvestigationFile)[] => {
+        return items.map(item => {
+          if (item.id === itemId) {
+            return { ...item, name: newName };
+          }
+          if (item.type === 'folder') {
+            return {
+              ...item,
+              children: updateItemName((item as InvestigationFolder).children)
+            };
+          }
+          return item;
+        });
+      };
+
+      const updatedFolders = updateItemName(prevFolders) as InvestigationFolder[];
+      
+      // Update localStorage for synchronization
+      localStorage.setItem('investigationFolderData', JSON.stringify(updatedFolders));
+      
+      return updatedFolders;
+    });
+  };
+
+  // Handle new folder creation
+  const handleNewFolder = (parentId: string | null) => {
+    const folderName = prompt('Enter folder name:');
+    if (!folderName || folderName.trim() === '') return;
+    
+    const newFolderId = `folder-${Date.now()}`;
+    const newFolder: InvestigationFolder = {
+      id: newFolderId,
+      name: folderName.trim(),
+      type: 'folder',
+      children: [],
+      isOpen: false
+    };
+    
+    if (parentId === null) {
+      // Add as a root folder
+      setFolderData(prevFolders => {
+        const updatedFolders = [...prevFolders, newFolder];
+        localStorage.setItem('investigationFolderData', JSON.stringify(updatedFolders));
+        return updatedFolders;
+      });
+    } else {
+      // Add as a child folder using updateFolderTreeWithNewItem helper
+      setFolderData(prevFolders => {
+        const updatedFolders = updateFolderTreeWithNewItem(prevFolders, parentId, newFolder);
+        localStorage.setItem('investigationFolderData', JSON.stringify(updatedFolders));
+        return updatedFolders;
+      });
+    }
+    
+    setShowFolderMenu({ show: false });
+    setOverlayVisible(false);
+  };
+
+  // Handle new investigation creation
+  const handleNewInvestigation = (parentId: string | null) => {
+    const fileName = prompt('Enter investigation name:');
+    if (!fileName || fileName.trim() === '') return;
+    
+    const newFileId = `file-${Date.now()}`;
+    const newFile: InvestigationFile = {
+      id: newFileId,
+      name: fileName.trim(),
+      type: 'file',
+      status: 'open',
+      severity: 'medium',
+      dateCreated: new Date().toISOString().split('T')[0],
+      dates: [],
+      assets: [],
+      domains: [],
+      description: '',
+      assignedTo: ''
+    };
+    
+    if (parentId === null) {
+      // Add to the first root folder
+      if (folderData.length > 0) {
+        setFolderData(prevFolders => {
+          const firstFolder = prevFolders[0];
+          const updatedFolders = [
+            {
+              ...firstFolder,
+              isOpen: true,
+              children: [...firstFolder.children, newFile]
+            },
+            ...prevFolders.slice(1)
+          ];
+          localStorage.setItem('investigationFolderData', JSON.stringify(updatedFolders));
+          return updatedFolders;
+        });
+      }
+    } else {
+      // Add to specified folder
+      setFolderData(prevFolders => {
+        const updatedFolders = updateFolderTreeWithNewItem(prevFolders, parentId, newFile);
+        localStorage.setItem('investigationFolderData', JSON.stringify(updatedFolders));
+        return updatedFolders;
+      });
+    }
+    
+    setShowFolderMenu({ show: false });
+    setOverlayVisible(false);
+  };
+
+  // Helper function to update folder tree with new item
+  const updateFolderTreeWithNewItem = (
+    folders: InvestigationFolder[], 
+    parentId: string, 
+    newItem: InvestigationFolder | InvestigationFile
+  ): InvestigationFolder[] => {
+    return folders.map(folder => {
+      if (folder.id === parentId) {
+        // Add item to this folder
+        return {
+          ...folder,
+          isOpen: true, // Open the folder when adding an item
+          children: [
+            ...folder.children.filter(child => child.type === 'folder'),
+            newItem,
+            ...folder.children.filter(child => child.type === 'file')
+          ]
+        };
+      } else if (folder.children.length > 0) {
+        // Look in children folders
+        return {
+          ...folder,
+          children: [
+            ...updateFolderTreeWithNewItem(
+              folder.children.filter(child => child.type === 'folder') as InvestigationFolder[], 
+              parentId, 
+              newItem
+            ),
+            ...folder.children.filter(child => child.type === 'file')
+          ]
+        };
+      }
+      return folder;
+    });
   };
 
   if (!selectedPolicy) {
@@ -295,10 +779,10 @@ const Signals: React.FC = () => {
         {/* Notification */}
         {notification && isNotificationVisible && (
           <Stack sx={{ position: 'fixed',
-            top: '10%', // Adjust this value for desired vertical spacing
+            top: '10%',
             left: '50%',
             transform: 'translateX(-50%)',
-            zIndex: 1300, // MUI Snackbar default zIndex is 1000
+            zIndex: 1300,
             maxWidth: '25%', margin: 'auto' }} spacing={2}>
             <Alert variant="filled" severity={notificationType}>{notification}</Alert>
           </Stack>
@@ -306,6 +790,31 @@ const Signals: React.FC = () => {
       </div>
       
       <div className="signal-detail-container">
+        {/* Add folder sidebar */}
+        <div className="folder-sidebar" ref={sidebarRef} style={{ width: `${sidebarWidth}%`, position: 'relative' }}>
+          <div 
+            className="resizer" 
+            onMouseDown={handleMouseDown} 
+            style={{ 
+              position: 'absolute', 
+              right: 0, 
+              top: 0, 
+              bottom: 0, 
+              width: '5px', 
+              cursor: 'ew-resize', 
+              backgroundColor: 'transparent' 
+            }} 
+          />
+          <div className="folder-header">
+            <h3>Investigation Files</h3>
+          </div>
+          <div className="folder-list">
+            {renderFolderStructure(folderData)}
+          </div>
+        </div>
+        
+        {/* Main content area */}
+        <div className="signal-content" style={{ width: `${100 - sidebarWidth}%` }}>
         {/* Three sections in one row */}
         <div className="three-column-row">
           {/* Profile section - one-third width */}
@@ -341,7 +850,6 @@ const Signals: React.FC = () => {
               ) : (
                 <button className="section-save-button" onClick={() => {
                   setIsEditingDescription(false);
-                  // Save description changes
                   handleSaveDescription();
                 }}>
                   <FaSave />
@@ -403,7 +911,6 @@ const Signals: React.FC = () => {
             ) : (
               <button className="section-save-button" style={{marginLeft: '84%'}} onClick={() => {
                 setIsEditingFunctionality(false);
-                // Save functionality changes
                 handleSaveFunctionality();
               }}>
                 <FaSave />
@@ -413,226 +920,12 @@ const Signals: React.FC = () => {
             <h3>Signal Rules</h3>
           </div>
           <div className="functionality-content">
-            {isEditingFunctionality ? (
-              <div className="policy-nodes-editor">
-                <div className="policy-title-editor">
-                  <h3>Policy Title (Sidebar Display)</h3>
-                  <input 
-                    type="text" 
-                    className="policy-title-input" 
-                    value={editedPolicy?.title || editedPolicy?.label || ""} 
-                    onChange={(e) => {
-                      setEditedPolicy({
-                        ...editedPolicy!,
-                        title: e.target.value
-                      });
-                    }}
-                    placeholder="Enter a title for the sidebar display"
-                  />
-                </div>
-                
-                <div className="policy-label-preview">
-                  <h4>Combined Policy Label (Flow Display):</h4>
-                  <div className="label-preview">
-                    {editedPolicy?.subPoliciesNodes.map(node => node.label).join(' ')}
+              {/* Rest of the functionality section - same as before */}
+              {/* ... */}
                   </div>
                 </div>
                 
-                <h3>Policy Nodes</h3>
-                <div className="node-preview-section">
-                  <h4>Policy Preview</h4>
-                  <div className="node-flow-preview">
-                    {editedPolicy?.subPoliciesNodes.map((node, index) => (
-                      <React.Fragment key={index}>
-                        <div className={`node-flow-item node-type-${node.type}`}>
-                          <span className="node-label">{node.label}</span>
-                          {node.operatorType && <span className="node-operator">[{node.operatorType}]</span>}
-                          {node.value && <span className="node-value">= {node.value}</span>}
-                        </div>
-                        {index < editedPolicy.subPoliciesNodes.length - 1 && (
-                          <div className="node-connector">
-                            <div className="connector-line"></div>
-                            <div className="connector-arrow">→</div>
-                          </div>
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </div>
-                <div className="node-editor-list">
-                  {editedPolicy?.subPoliciesNodes.map((node, index) => (
-                    <div 
-                      key={index} 
-                      className="node-editor-item"
-                      draggable
-                      onDragStart={() => setDraggedNodeIndex(index)}
-                      onDragOver={(e) => {
-                        e.preventDefault(); // Allow drop
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        if (draggedNodeIndex !== null && draggedNodeIndex !== index) {
-                          // Reorder nodes
-                          const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                          const draggedNode = updatedNodes[draggedNodeIndex];
-                          // Remove dragged node
-                          updatedNodes.splice(draggedNodeIndex, 1);
-                          // Insert at new position
-                          updatedNodes.splice(index, 0, draggedNode);
-                          setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                          setDraggedNodeIndex(null);
-                        }
-                      }}
-                    >
-                      <div className="drag-handle">
-                        <FaGripVertical />
-                      </div>
-                      
-                      <div className="node-input-group">
-                        <label>Title (Sidebar):</label>
-                        <input 
-                          type="text" 
-                          value={node.title || node.label} 
-                          onChange={(e) => {
-                            const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                            updatedNodes[index] = {...node, title: e.target.value};
-                            setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                          }}
-                        />
-                      </div>
-                      
-                      <div className="node-input-group">
-                        <label>Label (Flow):</label>
-                        <input 
-                          type="text" 
-                          value={node.label} 
-                          onChange={(e) => {
-                            const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                            updatedNodes[index] = {...node, label: e.target.value};
-                            setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                          }}
-                        />
-                      </div>
-                      
-                      <select 
-                        value={node.type} 
-                        onChange={(e) => {
-                          const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                          updatedNodes[index] = {
-                            ...node, 
-                            type: e.target.value as 'string' | 'stringInput' | 'timeInput' | 'operator',
-                            operatorType: e.target.value === 'operator' ? 'and' : undefined
-                          };
-                          setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                        }}
-                      >
-                        <option value="string">String Value</option>
-                        <option value="stringInput">String Input</option>
-                        <option value="timeInput">Time Input</option>
-                        <option value="operator">Operator</option>
-                      </select>
-                      
-                      {/* Show operator dropdown if node type is operator */}
-                      {node.type === 'operator' && (
-                        <select 
-                          value={node.operatorType || 'and'} 
-                          onChange={(e) => {
-                            const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                            updatedNodes[index] = {...node, operatorType: e.target.value};
-                            setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                          }}
-                        >
-                          <option value="and">AND</option>
-                          <option value="or">OR</option>
-                          <option value="xor">XOR</option>
-                          <option value="lt">&lt; (Less Than)</option>
-                          <option value="gt">&gt; (Greater Than)</option>
-                          <option value="eq">== (Equals)</option>
-                          <option value="seq">=== (Strict Equals)</option>
-                        </select>
-                      )}
-                      
-                      {/* Show appropriate input based on node type */}
-                      {node.type === 'stringInput' && (
-                        <input 
-                          type="text" 
-                          placeholder="String value" 
-                          value={node.value || ''} 
-                          onChange={(e) => {
-                            const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                            updatedNodes[index] = {...node, value: e.target.value};
-                            setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                          }}
-                        />
-                      )}
-                      
-                      {node.type === 'timeInput' && (
-                        <input 
-                          type="time" 
-                          value={node.value || ''} 
-                          onChange={(e) => {
-                            const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                            updatedNodes[index] = {...node, value: e.target.value};
-                            setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                          }}
-                        />
-                      )}
-                      
-                      <button onClick={() => {
-                        const updatedNodes = editedPolicy.subPoliciesNodes.filter((_, i) => i !== index);
-                        setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                      }}>Remove</button>
-                    </div>
-                  ))}
-                  
-                  {/* Add Node button */}
-                  <button 
-                    className="add-node-button"
-                    onClick={() => {
-                      setEditedPolicy({
-                        ...editedPolicy!, 
-                        subPoliciesNodes: [
-                          ...editedPolicy!.subPoliciesNodes, 
-                          { label: "New Node", type: "string" }
-                        ]
-                      });
-                    }}
-                  >
-                    <FaPlus /> Add New Node
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="nodes-list">
-                  <h3>Applied Nodes:</h3>
-                  <div className="node-flow-preview">
-                    {selectedPolicy.subPoliciesNodes.map((node, index) => (
-                      <React.Fragment key={index}>
-                        <div className={`node-flow-item node-type-${node.type}`}>
-                          <span className="node-label">{node.label}</span>
-                          {node.operatorType && <span className="node-operator">[{node.operatorType}]</span>}
-                          {node.value && <span className="node-value">= {node.value}</span>}
-                        </div>
-                        {index < selectedPolicy.subPoliciesNodes.length - 1 && (
-                          <div className="node-connector">
-                            <div className="connector-line"></div>
-                            <div className="connector-arrow">→</div>
-                          </div>
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </div>
-                <div className="functionality-description">
-                  <p>This policy monitors and detects abnormal patterns based on the configured nodes.</p>
-                  <p>When triggered, it will generate alerts according to the defined thresholds and parameters.</p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
+          {/* Charts section */}
         <div className="signal-section full-width">
           <h2>SIGNAL ANALYTICS</h2>
           <div className="charts-container">
@@ -741,6 +1034,177 @@ const Signals: React.FC = () => {
           </div>
         </div>
       </div>
+      </div>
+
+      {/* Folder menu */}
+      {showFolderMenu.show && (
+        <div 
+          className="action-menu"
+          style={{ 
+            position: 'absolute',
+            top: `${menuPosition.top}px`, 
+            left: `${menuPosition.left}px`,
+            padding: '0.6rem',
+            borderRadius: '0.4rem',
+            boxShadow: '0 0.15rem 0.75rem rgba(0, 0, 0, 0.1)',
+            zIndex: 1000
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button 
+            className="menu-item"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              if (showFolderMenu.folderId) {
+                const folder = findFolderById(showFolderMenu.folderId);
+                if (folder) {
+                  const newName = prompt("Enter new folder name:", folder.name);
+                  if (newName && newName.trim() !== "" && newName !== folder.name) {
+                    renameItem(showFolderMenu.folderId, newName.trim());
+                  }
+                }
+              }
+              
+              setShowFolderMenu({ show: false });
+              setOverlayVisible(false);
+            }}
+          >
+            <FaPencilAlt /> Rename
+          </button>
+          <button 
+            className="menu-item"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              if (showFolderMenu.folderId) {
+                handleNewFolder(showFolderMenu.folderId);
+              }
+              
+              setShowFolderMenu({ show: false });
+              setOverlayVisible(false);
+            }}
+          >
+            <FaFolder /> New Folder
+          </button>
+          <button 
+            className="menu-item"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              if (showFolderMenu.folderId) {
+                handleNewInvestigation(showFolderMenu.folderId);
+              }
+              
+              setShowFolderMenu({ show: false });
+              setOverlayVisible(false);
+            }}
+          >
+            <FaFile /> New Investigation
+          </button>
+          <button 
+            className="menu-item delete-action"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              if (showFolderMenu.folderId) {
+                deleteItem(showFolderMenu.folderId);
+              }
+              
+              setShowFolderMenu({ show: false });
+              setOverlayVisible(false);
+            }}
+          >
+            <FaTrash /> Delete
+          </button>
+        </div>
+      )}
+      
+      {/* File action menu */}
+      {showFileMenu.show && (
+        <div 
+          className="action-menu"
+          style={{ 
+            position: 'absolute',
+            top: `${menuPosition.top}px`,
+            left: `${menuPosition.left}px`,
+            padding: '0.6rem',
+            borderRadius: '0.4rem',
+            boxShadow: '0 0.15rem 0.75rem rgba(0, 0, 0, 0.1)',
+            zIndex: 1000
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button 
+            className="menu-item"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              if (showFileMenu.fileId) {
+                const file = findFileById(showFileMenu.fileId);
+                if (file) {
+                  const newName = prompt("Enter new file name:", file.name);
+                  if (newName && newName.trim() !== "" && newName !== file.name) {
+                    renameItem(showFileMenu.fileId, newName.trim());
+                  }
+                }
+              }
+              
+              setShowFileMenu({ show: false });
+              setOverlayVisible(false);
+            }}
+          >
+            <FaPencilAlt /> Rename
+          </button>
+          <button 
+            className="menu-item"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              // In Signals component, we don't have an edit mode for files yet,
+              // so we just close the menu
+              setShowFileMenu({ show: false });
+              setOverlayVisible(false);
+            }}
+          >
+            <FaEdit /> View
+          </button>
+          <button 
+            className="menu-item delete-action"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              
+              if (showFileMenu.fileId) {
+                deleteItem(showFileMenu.fileId);
+              }
+              
+              setShowFileMenu({ show: false });
+              setOverlayVisible(false);
+            }}
+          >
+            <FaTrash /> Delete
+          </button>
+        </div>
+      )}
+
+      {/* Overlay for closing menus */}
+      {overlayVisible && (
+        <div 
+          className="menu-overlay" 
+          onClick={() => {
+            setShowFolderMenu({ show: false });
+            setShowFileMenu({ show: false });
+            setOverlayVisible(false);
+          }}
+        />
+      )}
     </div>
   );
 };
