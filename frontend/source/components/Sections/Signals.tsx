@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../../styles/Signals.css';
 import { FaEdit, FaSave, FaArrowLeft, FaChartLine, FaExclamationTriangle, FaGripVertical, FaPlus, 
-  FaFolder, FaFolderOpen, FaFile, FaEllipsisH, FaTrash, FaPencilAlt, FaChevronRight, FaChevronDown } from 'react-icons/fa';
+  FaFolder, FaFolderOpen, FaFile, FaEllipsisH, FaTrash, FaPencilAlt, FaChevronRight, FaChevronDown, FaTimes, FaCalendarAlt, FaClock, FaBell, FaCodeBranch } from 'react-icons/fa';
 import { costumePolicies } from './Investigations';
 import { Line, Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
@@ -19,6 +19,7 @@ interface NodeType {
   operatorType?: string;
   leftParam?: OperatorParam;
   rightParam?: OperatorParam;
+  enabled?: boolean;
 }
 
 interface SubPolicy {
@@ -37,6 +38,15 @@ interface PolicyNode {
   subPoliciesNodes: NodeType[];
   icon: React.ReactNode;
   description: string;
+  profile?: {
+    createdDate: string;
+    activeSince: string;
+    lastUpdated: string;
+    severity: string;
+    status: string;
+    triggered: number;
+    notes?: string;
+  };
 }
 
 // Define folder structure interfaces matching Investigations.tsx
@@ -80,6 +90,27 @@ interface OperatorParam {
   value: string;
 }
 
+// Add this helper function to convert operator types to symbols
+const getOperatorSymbol = (operatorType?: string): string => {
+  switch (operatorType?.toLowerCase()) {
+    case 'and': return '&&';
+    case 'or': return '||';
+    case 'xor': return '⊕';
+    case 'not': return '!';
+    case 'eq': return '==';
+    case 'neq': return '!=';
+    case 'gt': return '>';
+    case 'gte': return '≥';
+    case 'lt': return '<';
+    case 'lte': return '≤';
+    case 'contains': return '∋';
+    case 'startswith': return '^=';
+    case 'endswith': return '$=';
+    case 'matches': return '≈';
+    default: return operatorType || '';
+  }
+};
+
 const Signals: React.FC = () => {
   const [selectedPolicy, setSelectedPolicy] = useState<PolicyNode | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -108,6 +139,10 @@ const Signals: React.FC = () => {
   // Replace single edit state with section-specific editing states
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isEditingFunctionality, setIsEditingFunctionality] = useState(false);
+
+  // Add these new states
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editedProfile, setEditedProfile] = useState<any>(null);
 
   // Load folder data from localStorage
   useEffect(() => {
@@ -487,29 +522,15 @@ const Signals: React.FC = () => {
 
   const handleSaveFunctionality = () => {
     if (editedPolicy) {
+      console.log(editedPolicy);
       setSelectedPolicy({
         ...selectedPolicy!,
-        subPoliciesNodes: editedPolicy.subPoliciesNodes
+        subPoliciesNodes: editedPolicy.subPoliciesNodes.map(node => ({
+          ...node,
+          enabled: node.enabled !== false // Ensure enabled is explicitly set (default to true)
+        }))
       });
-      
-      const existingIndex = costumePolicies.findIndex(
-        policy => policy.id === editedPolicy.id
-      );
-      
-      if (existingIndex >= 0) {
-        costumePolicies[existingIndex] = {
-          ...costumePolicies[existingIndex],
-          subPoliciesNodes: editedPolicy.subPoliciesNodes
-        };
-      }
-      
-      setNotificationType('success');
-      setNotification("Functionality updated!");
-      setIsNotificationVisible(true);
-      setTimeout(() => {
-        setIsNotificationVisible(false);
-        setNotification('');
-      }, 1000);
+      setIsEditingFunctionality(false);
     }
   };
 
@@ -755,6 +776,37 @@ const Signals: React.FC = () => {
     });
   };
 
+  // Add this handler function
+  const handleSaveProfile = () => {
+    if (editedProfile && selectedPolicy) {
+      // Ensure all required fields are included and non-optional
+      setSelectedPolicy({
+        ...selectedPolicy,
+        id: selectedPolicy.id, // Explicitly provide the id
+        label: selectedPolicy.label, // Explicitly provide the label
+        color: selectedPolicy.color, // Explicitly provide the color
+        subPoliciesNodes: selectedPolicy.subPoliciesNodes,
+        icon: selectedPolicy.icon,
+        description: selectedPolicy.description,
+        profile: editedProfile
+      });
+    }
+  };
+
+  // And in useEffect where you initialize other edited values:
+  useEffect(() => {
+    if (selectedPolicy) {
+      setEditedPolicy({
+        ...selectedPolicy,
+        subPoliciesNodes: selectedPolicy.subPoliciesNodes.map(node => ({
+          ...node,
+          enabled: node.enabled !== false // Default to true if undefined
+        }))
+      });
+      // Other initializations...
+    }
+  }, [selectedPolicy]);
+
   if (!selectedPolicy) {
     return (
       <div className="signals-container">
@@ -828,24 +880,44 @@ const Signals: React.FC = () => {
         {/* Three sections in one row */}
         <div className="three-column-row">
           {/* Profile section - one-third width */}
-          <div className="signal-section">
+          <div className="signal-section profile-section">
             <h2>PROFILE</h2>
-            <div className="profile-details">
-              <div className="profile-item">
-                <span className="item-label">Created Date:</span>
-                <span className="item-value">{new Date().toLocaleDateString()}</span>
+            
+            <div className="profile-display">
+              <div className="profile-row">
+                <div className="profile-grid-item">
+                  <div className="profile-icon"><FaCalendarAlt /></div>
+                  <div className="profile-content">
+                    <span className="profile-label">Created Date</span><br></br>
+                    <span className="profile-value">{new Date().toLocaleDateString()}</span>
               </div>
-              <div className="profile-item">
-                <span className="item-label">Active Since:</span>
-                <span className="item-value">{new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}</span>
               </div>
-              <div className="profile-item">
-                <span className="item-label">Regression Data:</span>
-                <span className="item-value">Last updated: {new Date().toLocaleDateString()}</span>
+                
+                <div className="profile-grid-item">
+                  <div className="profile-icon"><FaClock /></div>
+                  <div className="profile-content">
+                    <span className="profile-label">Active Since</span><br></br>
+                    <span className="profile-value">{new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}</span>
               </div>
-              <div className="profile-item">
-                <span className="item-label">Triggered:</span>
-                <span className="item-value">{Math.floor(Math.random() * 20) + 5} times</span>
+                </div>
+              </div>
+              
+              <div className="profile-row">
+                <div className="profile-grid-item">
+                  <div className="profile-icon"><FaChartLine /></div>
+                  <div className="profile-content">
+                    <span className="profile-label">Regression Data</span> <br></br>
+                    <span className="profile-value">{new Date().toLocaleDateString()}</span>
+                  </div>
+                </div>
+                
+                <div className="profile-grid-item">
+                  <div className="profile-icon"><FaBell /></div>
+                  <div className="profile-content">
+                    <span className="profile-label">Triggered</span><br></br>
+                    <span className="profile-value highlight">{Math.floor(Math.random() * 20) + 5} times</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -915,11 +987,11 @@ const Signals: React.FC = () => {
         <div className="signal-section full-width">
           <h2>FUNCTIONALITY</h2>
           {!isEditingFunctionality ? (
-              <button className="section-edit-button" style={{marginLeft: '84%'}} onClick={() => setIsEditingFunctionality(true)}>
+              <button className="section-edit-button" onClick={() => setIsEditingFunctionality(true)}>
                 <FaEdit />
               </button>
             ) : (
-              <button className="section-save-button" style={{marginLeft: '84%'}} onClick={() => {
+              <button className="section-save-button" onClick={() => {
                 setIsEditingFunctionality(false);
                 handleSaveFunctionality();
               }}>
@@ -950,68 +1022,63 @@ const Signals: React.FC = () => {
                 
                 <h3>Policy Nodes</h3>
                 <div className="node-preview-section">
-                  <h4>Policy Preview</h4>
-                  <div className="node-flow-preview">
-                    {editedPolicy?.subPoliciesNodes.map((node, index) => (
-                      <React.Fragment key={index}>
-                        {node.type === 'operator' && node.operatorType === 'newline' ? (
-                          <div className="node-flow-break"></div>
-                        ) : (
-                          <div className={`node-flow-item node-type-${node.type}`}>
-                            {node.type === 'string' && (
-                              <span className="node-label">{node.label}</span>
-                            )}
-                            {node.type === 'stringInput' && (
-                              <div>
-                                <span className="node-label">{node.label}</span>
-                                <input type="text" value={node.value || ''} readOnly />
-                              </div>
-                            )}
-                            {node.type === 'timeInput' && (
-                              <div>
-                                <span className="node-label">{node.label}</span>
-                                <input 
-                                  type={node.timeFormat === 'duration' ? 'text' : 'time'} 
-                                  value={node.value || ''} 
-                                  readOnly 
-                                />
-                              </div>
-                            )}
-                            {node.type === 'operator' && node.operatorType !== 'newline' && (
-                              <div className="operator-container">
-                                {node.leftParam?.type === 'string' ? (
-                                  <span className="operator-param">{node.leftParam.value}</span>
-                                ) : (
-                                  <input type="text" value={node.leftParam?.value || ''} readOnly className="operator-param" />
+                  <h4>Flow Preview</h4>
+                  <div className="single-node-preview">
+                    <div className="single-node-header">
+                      <div className="node-icon"><FaCodeBranch /></div>
+                      <div className="node-title">{selectedPolicy.label || "Policy Preview"}</div>
+                        </div>
+                    <div className="single-node-body">
+                      <div className="policy-flow">
+                        {selectedPolicy.subPoliciesNodes.map((node, index) => (
+                          <React.Fragment key={index}>
+                            {node.type === 'operator' && node.operatorType === 'newline' ? (
+                              <span className="flow-newline"></span>
+                            ) : (
+                              <span className={`flow-element ${node.enabled === false ? 'flow-disabled' : ''}`}>
+                                {node.type === 'string' && (
+                                  <span className="flow-text">{node.label}</span>
                                 )}
                                 
-                                <span className="operator-symbol">{node.operatorType}</span>
-                                
-                                {node.rightParam?.type === 'string' ? (
-                                  <span className="operator-param">{node.rightParam.value}</span>
-                                ) : (
-                                  <input type="text" value={node.rightParam?.value || ''} readOnly className="operator-param" />
+                                {node.type === 'stringInput' && (
+                                  <>
+                                    <span className="flow-text">{node.label}</span>
+                                    <span className="flow-value">"{node.value || ''}"</span>
+                                  </>
                                 )}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        {index < editedPolicy.subPoliciesNodes.length - 1 && 
-                         !(node.type === 'operator' && node.operatorType === 'newline') &&
-                         !(editedPolicy.subPoliciesNodes[index+1].type === 'operator' && 
-                           editedPolicy.subPoliciesNodes[index+1].operatorType === 'newline') && (
-                          <div className="node-connector">
-                            <div className="connector-line"></div>
-                            <div className="connector-arrow">→</div>
-                          </div>
+                                
+                                {node.type === 'timeInput' && (
+                                  <>
+                                    <span className="flow-text">{node.label}</span>
+                                    <span className="flow-value">{node.value || ''}</span>
+                                  </>
+                                )}
+                                
+                                {node.type === 'operator' && node.operatorType !== 'newline' && (
+                                  <span className="flow-expr">
+                                    <span className="flow-param">{node.leftParam?.value || ''}</span>
+                                    <span className="flow-operator">{getOperatorSymbol(node.operatorType)}</span>
+                                    <span className="flow-param">{node.rightParam?.value || ''}</span>
+                                  </span>
+                                )}
+                                
+                                {index < selectedPolicy.subPoliciesNodes.length - 1 && 
+                                !(node.type === 'operator' && node.operatorType === 'newline') &&
+                                !(selectedPolicy.subPoliciesNodes[index+1].type === 'operator' && 
+                                  selectedPolicy.subPoliciesNodes[index+1].operatorType === 'newline') && (
+                                  <span className="flow-connector"></span>
+                                )}
+                              </span>
                         )}
                       </React.Fragment>
                     ))}
                   </div>
                 </div>
+                  </div>
+                </div>
                 
                 <div className="node-editor-list">
-                  {editedPolicy?.subPoliciesNodes.map((node, index) => (
+                  {selectedPolicy.subPoliciesNodes.map((node, index) => (
                     <div 
                       key={index} 
                       className="node-editor-item"
@@ -1024,276 +1091,303 @@ const Signals: React.FC = () => {
                         e.preventDefault();
                         if (draggedNodeIndex !== null && draggedNodeIndex !== index) {
                           // Reorder nodes
-                          const updatedNodes = [...editedPolicy.subPoliciesNodes];
+                          const updatedNodes = [...selectedPolicy.subPoliciesNodes];
                           const draggedNode = updatedNodes[draggedNodeIndex];
                           // Remove dragged node
                           updatedNodes.splice(draggedNodeIndex, 1);
                           // Insert at new position
                           updatedNodes.splice(index, 0, draggedNode);
-                          setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                          setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
                           setDraggedNodeIndex(null);
                         }
                       }}
                     >
+                      <div className="node-item-header">
+                        <div className="node-type-badge">{node.type}</div>
+                        <div className="node-toggle-switch">
+                          <label className="switch">
+                            <input 
+                              type="checkbox" 
+                              checked={node.enabled !== false}
+                              onChange={(e) => {
+                                const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                                updatedNodes[index] = {...node, enabled: e.target.checked};
+                                setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                              }}
+                            />
+                            <span className="slider round"></span>
+                          </label>
+                        </div>
+                      </div>
+                      
+                      <div className="node-item-content">
                       <div className="drag-handle">
                         <FaGripVertical />
                       </div>
                       
-                      {/* Node Type Select */}
-                      <select 
-                        value={node.type} 
-                        onChange={(e) => {
-                          const type = e.target.value as 'string' | 'stringInput' | 'timeInput' | 'operator';
-                          let updatedNode: NodeType = { ...node, type };
-                          
-                          // Initialize appropriate values based on node type
-                          if (type === 'operator') {
-                            updatedNode = {
-                              ...updatedNode,
-                              operatorType: 'and',
-                              leftParam: { type: 'string', value: 'Value A' },
-                              rightParam: { type: 'string', value: 'Value B' },
-                            };
-                          } else if (type === 'timeInput') {
-                            updatedNode = {
-                              ...updatedNode,
-                              timeFormat: 'specific',
-                              value: ''
-                            };
-                          }
-                          
-                          const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                          updatedNodes[index] = updatedNode;
-                          setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                        }}
-                      >
-                        <option value="string">String Value</option>
-                        <option value="stringInput">String Input</option>
-                        <option value="timeInput">Time Input</option>
-                        <option value="operator">Operator</option>
-                      </select>
-                      
-                      {/* String Value: just need label */}
-                      {node.type === 'string' && (
+                        {/* Node Type Selector */}
+                        <div className="node-field">
+                          <select 
+                            value={node.type} 
+                            onChange={(e) => {
+                              const type = e.target.value as 'string' | 'stringInput' | 'timeInput' | 'operator';
+                              let updatedNode: NodeType = { ...node, type };
+                              
+                              // Initialize appropriate values based on node type
+                              if (type === 'operator') {
+                                updatedNode = {
+                                  ...updatedNode,
+                                  operatorType: 'and',
+                                  leftParam: { type: 'string', value: 'Value A' },
+                                  rightParam: { type: 'string', value: 'Value B' },
+                                };
+                              } else if (type === 'timeInput') {
+                                updatedNode = {
+                                  ...updatedNode,
+                                  timeFormat: 'specific',
+                                  value: ''
+                                };
+                              }
+                              
+                              const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                              updatedNodes[index] = updatedNode;
+                              setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                            }}
+                          >
+                            <option value="string">String</option>
+                            <option value="stringInput">Input</option>
+                            <option value="timeInput">Time</option>
+                            <option value="operator">Operator</option>
+                          </select>
+                        </div>
+                        
+                        {/* Node-specific fields */}
+                        {node.type === 'string' && (
+                          <div className="node-field">
+                        <input 
+                          type="text" 
+                              value={node.label} 
+                              placeholder="Text to display"
+                          onChange={(e) => {
+                                const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                                updatedNodes[index] = {...node, label: e.target.value};
+                                setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                          }}
+                        />
+                      </div>
+                        )}
+                        
+                        {/* String Input fields */}
+                        {node.type === 'stringInput' && (
+                          <>
+                            <div className="node-field">
                         <input 
                           type="text" 
                           value={node.label} 
-                          placeholder="Text to display"
+                                placeholder="Label"
                           onChange={(e) => {
-                            const updatedNodes = [...editedPolicy.subPoliciesNodes];
+                                  const updatedNodes = [...selectedPolicy.subPoliciesNodes];
                             updatedNodes[index] = {...node, label: e.target.value};
-                            setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                                  setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
                           }}
                         />
-                      )}
-                      
-                      {/* String Input: need label and default value */}
-                      {node.type === 'stringInput' && (
-                        <>
-                          <div>
-                            <div>Label:</div>
-                            <input 
-                              type="text" 
-                              value={node.label} 
-                              placeholder="Input label"
-                              onChange={(e) => {
-                                const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                                updatedNodes[index] = {...node, label: e.target.value};
-                                setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <div>Default value:</div>
-                            <input 
-                              type="text" 
-                              value={node.value || ''} 
-                              placeholder="Default value"
-                              onChange={(e) => {
-                                const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                                updatedNodes[index] = {...node, value: e.target.value};
-                                setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                              }}
-                            />
-                          </div>
-                        </>
-                      )}
-                      
-                      {/* Time Input: need label, format and default value */}
-                      {node.type === 'timeInput' && (
-                        <>
-                          <div>
-                            <div>Label:</div>
-                            <input 
-                              type="text" 
-                              value={node.label} 
-                              placeholder="Time label"
-                              onChange={(e) => {
-                                const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                                updatedNodes[index] = {...node, label: e.target.value};
-                                setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <div>Time format:</div>
-                            <select
-                              value={node.timeFormat || 'specific'}
-                              onChange={(e) => {
-                                const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                                updatedNodes[index] = {
-                                  ...node, 
-                                  timeFormat: e.target.value as 'specific' | 'duration',
-                                  value: '' // Reset value when changing format
-                                };
-                                setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                              }}
-                            >
-                              <option value="specific">Specific time</option>
-                              <option value="duration">Duration</option>
-                            </select>
-                          </div>
-                          <div>
-                            <div>Default value:</div>
-                            {node.timeFormat === 'duration' ? (
+                      </div>
+                            <div className="node-field">
                               <input 
                                 type="text" 
                                 value={node.value || ''} 
-                                placeholder="e.g. 30ms, 5s"
+                                placeholder="Default value"
                                 onChange={(e) => {
-                                  const updatedNodes = [...editedPolicy.subPoliciesNodes];
+                                  const updatedNodes = [...selectedPolicy.subPoliciesNodes];
                                   updatedNodes[index] = {...node, value: e.target.value};
-                                  setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                                  setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
                                 }}
                               />
-                            ) : (
-                              <input 
-                                type="time" 
-                                value={node.value || ''} 
-                                onChange={(e) => {
-                                  const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                                  updatedNodes[index] = {...node, value: e.target.value};
-                                  setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                                }}
-                              />
-                            )}
-                          </div>
-                        </>
-                      )}
-                      
-                      {/* Operator Node: need operator type and both parameters */}
-                      {node.type === 'operator' && (
-                        <div style={{gridColumn: "span 2"}}>
-                          <select 
-                            value={node.operatorType || 'and'} 
-                            onChange={(e) => {
-                              const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                              updatedNodes[index] = {...node, operatorType: e.target.value};
-                              setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                            }}
-                            style={{marginBottom: "10px", width: "100%"}}
-                          >
-                            <option value="and">AND</option>
-                            <option value="or">OR</option>
-                            <option value="xor">XOR</option>
-                            <option value="lt">&lt; (Less Than)</option>
-                            <option value="gt">&gt; (Greater Than)</option>
-                            <option value="eq">== (Equals)</option>
-                            <option value="seq">=== (Strict Equals)</option>
-                            <option value="newline">New Line</option>
-                          </select>
-                          
-                          {node.operatorType !== 'newline' && (
-                            <div className="operator-node-editor">
-                              {/* Left Parameter */}
-                              <div>
-                                <select 
-                                  className="param-type-select"
-                                  value={node.leftParam?.type || 'string'} 
-                                  onChange={(e) => {
-                                    const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                                    updatedNodes[index] = {
-                                      ...node, 
-                                      leftParam: {
-                                        type: e.target.value as 'string' | 'input',
-                                        value: node.leftParam?.value || ''
-                                      }
-                                    };
-                                    setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                                  }}
-                                >
-                                  <option value="string">Text</option>
-                                  <option value="input">Input Field</option>
-                                </select>
-                                <input 
-                                  type="text" 
-                                  value={node.leftParam?.value || ''} 
-                                  placeholder="Left parameter"
-                                  onChange={(e) => {
-                                    const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                                    updatedNodes[index] = {
-                                      ...node, 
-                                      leftParam: {
-                                        ...(node.leftParam || { type: 'string' }),
-                                        value: e.target.value
-                                      }
-                                    };
-                                    setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                                  }}
-                                />
-                              </div>
-                              
-                              {/* Operator Display */}
-                              <div className="operator-symbol" style={{textAlign: "center"}}>
-                                {node.operatorType}
-                              </div>
-                              
-                              {/* Right Parameter */}
-                              <div>
-                                <select 
-                                  className="param-type-select"
-                                  value={node.rightParam?.type || 'string'} 
-                                  onChange={(e) => {
-                                    const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                                    updatedNodes[index] = {
-                                      ...node, 
-                                      rightParam: {
-                                        type: e.target.value as 'string' | 'input',
-                                        value: node.rightParam?.value || ''
-                                      }
-                                    };
-                                    setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                                  }}
-                                >
-                                  <option value="string">Text</option>
-                                  <option value="input">Input Field</option>
-                                </select>
-                                <input 
-                                  type="text" 
-                                  value={node.rightParam?.value || ''} 
-                                  placeholder="Right parameter"
-                                  onChange={(e) => {
-                                    const updatedNodes = [...editedPolicy.subPoliciesNodes];
-                                    updatedNodes[index] = {
-                                      ...node, 
-                                      rightParam: {
-                                        ...(node.rightParam || { type: 'string' }),
-                                        value: e.target.value
-                                      }
-                                    };
-                                    setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                                  }}
-                                />
-                              </div>
                             </div>
-                          )}
-                        </div>
-                      )}
-                      
-                      <button onClick={() => {
-                        const updatedNodes = editedPolicy.subPoliciesNodes.filter((_, i) => i !== index);
-                        setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
-                      }}>Remove</button>
+                          </>
+                        )}
+                        
+                        {/* Time Input fields */}
+                        {node.type === 'timeInput' && (
+                          <>
+                            <div className="node-field">
+                              <input 
+                                type="text" 
+                                value={node.label} 
+                                placeholder="Label"
+                                onChange={(e) => {
+                                  const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                                  updatedNodes[index] = {...node, label: e.target.value};
+                                  setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                                }}
+                              />
+                            </div>
+                            <div className="node-field">
+                      <select 
+                                value={node.timeFormat || 'specific'} 
+                        onChange={(e) => {
+                                  const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                          updatedNodes[index] = {
+                            ...node, 
+                                    timeFormat: e.target.value as 'specific' | 'duration',
+                                    value: '' // Reset value when format changes
+                                  };
+                                  setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                                }}
+                              >
+                                <option value="specific">Specific</option>
+                                <option value="duration">Duration</option>
+                      </select>
+                            </div>
+                            <div className="node-field">
+                              {node.timeFormat === 'duration' ? (
+                                <input 
+                                  type="text" 
+                                  value={node.value || ''} 
+                                  placeholder="e.g. 30ms"
+                                  onChange={(e) => {
+                                    const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                                    updatedNodes[index] = {...node, value: e.target.value};
+                                    setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                                  }}
+                                />
+                              ) : (
+                                <input 
+                                  type="time" 
+                                  value={node.value || ''} 
+                                  onChange={(e) => {
+                                    const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                                    updatedNodes[index] = {...node, value: e.target.value};
+                                    setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                                  }}
+                                />
+                              )}
+                            </div>
+                          </>
+                        )}
+                        
+                        {/* Operator fields */}
+                      {node.type === 'operator' && (
+                          <>
+                            <div className="node-field">
+                        <select 
+                          value={node.operatorType || 'and'} 
+                          onChange={(e) => {
+                                  const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                            updatedNodes[index] = {...node, operatorType: e.target.value};
+                                  setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                                }}
+                              >
+                                <option value="and">AND (&&)</option>
+                                <option value="or">OR (||)</option>
+                                <option value="xor">XOR (⊕)</option>
+                                <option value="not">NOT (!)</option>
+                                <option value="eq">Equals (==)</option>
+                                <option value="neq">Not Equals (!=)</option>
+                                <option value="gt">Greater Than ({'>'})</option>
+                                <option value="gte">Greater Than or Equal (≥)</option>
+                                <option value="lt">Less Than ({'<'})</option>
+                                <option value="lte">Less Than or Equal (≤)</option>
+                                <option value="contains">Contains (∋)</option>
+                                <option value="startswith">Starts With (^=)</option>
+                                <option value="endswith">Ends With ($=)</option>
+                                <option value="matches">Matches (≈)</option>
+                                <option value="newline">New Line</option>
+                        </select>
+                            </div>
+                            
+                            {node.operatorType !== 'newline' && (
+                              <>
+                                <div className="operator-params">
+                                  <div className="node-field">
+                                    <select 
+                                      value={node.leftParam?.type || 'string'} 
+                                      onChange={(e) => {
+                                        const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                                        updatedNodes[index] = {
+                                          ...node, 
+                                          leftParam: {
+                                            type: e.target.value as 'string' | 'input',
+                                            value: node.leftParam?.value || ''
+                                          }
+                                        };
+                                        setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                                      }}
+                                    >
+                                      <option value="string">Text</option>
+                                      <option value="input">Input</option>
+                                    </select>
+                        <input 
+                          type="text" 
+                                      value={node.leftParam?.value || ''} 
+                                      placeholder="Left param"
+                          onChange={(e) => {
+                                        const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                                        updatedNodes[index] = {
+                                          ...node, 
+                                          leftParam: {
+                                            ...(node.leftParam || { type: 'string' }),
+                                            value: e.target.value
+                                          }
+                                        };
+                                        setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                                      }}
+                                    />
+                                  </div>
+                                  
+                                  <div className="operator-symbol">{getOperatorSymbol(node.operatorType)}</div>
+                                  
+                                  <div className="node-field">
+                                    <select 
+                                      value={node.rightParam?.type || 'string'} 
+                                      onChange={(e) => {
+                                        const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                                        updatedNodes[index] = {
+                                          ...node, 
+                                          rightParam: {
+                                            type: e.target.value as 'string' | 'input',
+                                            value: node.rightParam?.value || ''
+                                          }
+                                        };
+                                        setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                                      }}
+                                    >
+                                      <option value="string">Text</option>
+                                      <option value="input">Input</option>
+                                    </select>
+                        <input 
+                                      type="text" 
+                                      value={node.rightParam?.value || ''} 
+                                      placeholder="Right param"
+                          onChange={(e) => {
+                                        const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                                        updatedNodes[index] = {
+                                          ...node, 
+                                          rightParam: {
+                                            ...(node.rightParam || { type: 'string' }),
+                                            value: e.target.value
+                                          }
+                                        };
+                                        setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </>
+                        )}
+                        
+                        <button 
+                          className="remove-node-button"
+                          onClick={() => {
+                            const updatedNodes = selectedPolicy.subPoliciesNodes.filter((_, i) => i !== index);
+                            setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                          }}
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
                     </div>
                   ))}
                   
@@ -1301,10 +1395,10 @@ const Signals: React.FC = () => {
                   <button 
                     className="add-node-button"
                     onClick={() => {
-                      setEditedPolicy({
-                        ...editedPolicy!, 
+                      setSelectedPolicy({
+                        ...selectedPolicy!, 
                         subPoliciesNodes: [
-                          ...editedPolicy!.subPoliciesNodes, 
+                          ...selectedPolicy!.subPoliciesNodes, 
                           { label: "New Node", type: "string" }
                         ]
                       });
@@ -1324,15 +1418,15 @@ const Signals: React.FC = () => {
                         {node.type === 'operator' && node.operatorType === 'newline' ? (
                           <div className="node-flow-break"></div>
                         ) : (
-                          <div className={`node-flow-item node-type-${node.type}`}>
+                          <div className={`node-flow-item node-type-${node.type} ${node.enabled === false ? 'disabled' : ''}`}>
                             {node.type === 'string' && (
-                              <span className="node-label">{node.label}</span>
+                          <span className="node-label">{node.label}</span>
                             )}
                             {node.type === 'stringInput' && (
                               <div>
                                 <span className="node-label">{node.label}</span>
                                 <input type="text" value={node.value || ''} readOnly />
-                              </div>
+                        </div>
                             )}
                             {node.type === 'timeInput' && (
                               <div>
@@ -1352,7 +1446,7 @@ const Signals: React.FC = () => {
                                   <input type="text" value={node.leftParam?.value || ''} readOnly className="operator-param" />
                                 )}
                                 
-                                <span className="operator-symbol">{node.operatorType}</span>
+                                <span className="operator-symbol">{getOperatorSymbol(node.operatorType)}</span>
                                 
                                 {node.rightParam?.type === 'string' ? (
                                   <span className="operator-param">{node.rightParam.value}</span>
@@ -1384,7 +1478,7 @@ const Signals: React.FC = () => {
             )}
           </div>
         </div>
-        
+
         {/* Charts section */}
         <div className="signal-section full-width">
           <h2>SIGNAL ANALYTICS</h2>

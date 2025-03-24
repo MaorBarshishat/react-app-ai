@@ -39,7 +39,7 @@ const Policies = () => {
     { label: "Custom Policies", color: "#FF8C00", subPoliciesNodes: costumePolicies, icon: <FaCog color="#FF8C00" /> }  // Unique option
   ]);
 
-
+  console.log(costumePolicies);
   const [activeTool, setActiveTool] = useState(policiesNodes[0].label);
   const [type, label, color, setNode] = useDnD();
   const [widthPercentage, setWidthPercentage] = useState(28); // State for width in percentage
