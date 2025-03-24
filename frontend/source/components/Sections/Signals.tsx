@@ -15,7 +15,10 @@ interface NodeType {
   title?: string;
   type: 'string' | 'stringInput' | 'timeInput' | 'operator';
   value?: string;
+  timeFormat?: 'specific' | 'duration';
   operatorType?: string;
+  leftParam?: OperatorParam;
+  rightParam?: OperatorParam;
 }
 
 interface SubPolicy {
@@ -70,6 +73,12 @@ interface PolicyPerformance {
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
+
+// Add this interface to describe the operator node's parameter types
+interface OperatorParam {
+  type: 'string' | 'input';
+  value: string;
+}
 
 const Signals: React.FC = () => {
   const [selectedPolicy, setSelectedPolicy] = useState<PolicyNode | null>(null);
@@ -445,6 +454,7 @@ const Signals: React.FC = () => {
     }
   };
 
+  // Add this state for tracking the dragging
   const [draggedNodeIndex, setDraggedNodeIndex] = useState<number | null>(null);
 
   const handleSaveDescription = () => {
@@ -920,12 +930,462 @@ const Signals: React.FC = () => {
             <h3>Signal Rules</h3>
           </div>
           <div className="functionality-content">
-              {/* Rest of the functionality section - same as before */}
-              {/* ... */}
+            {isEditingFunctionality ? (
+              <div className="policy-nodes-editor">
+                <div className="policy-title-editor">
+                  <h3>Policy Title (Sidebar Display)</h3>
+                  <input 
+                    type="text" 
+                    className="policy-title-input" 
+                    value={editedPolicy?.title || editedPolicy?.label || ""} 
+                    onChange={(e) => {
+                      setEditedPolicy({
+                        ...editedPolicy!,
+                        title: e.target.value
+                      });
+                    }}
+                    placeholder="Enter a title for the sidebar display"
+                  />
+                </div>
+                
+                <h3>Policy Nodes</h3>
+                <div className="node-preview-section">
+                  <h4>Policy Preview</h4>
+                  <div className="node-flow-preview">
+                    {editedPolicy?.subPoliciesNodes.map((node, index) => (
+                      <React.Fragment key={index}>
+                        {node.type === 'operator' && node.operatorType === 'newline' ? (
+                          <div className="node-flow-break"></div>
+                        ) : (
+                          <div className={`node-flow-item node-type-${node.type}`}>
+                            {node.type === 'string' && (
+                              <span className="node-label">{node.label}</span>
+                            )}
+                            {node.type === 'stringInput' && (
+                              <div>
+                                <span className="node-label">{node.label}</span>
+                                <input type="text" value={node.value || ''} readOnly />
+                              </div>
+                            )}
+                            {node.type === 'timeInput' && (
+                              <div>
+                                <span className="node-label">{node.label}</span>
+                                <input 
+                                  type={node.timeFormat === 'duration' ? 'text' : 'time'} 
+                                  value={node.value || ''} 
+                                  readOnly 
+                                />
+                              </div>
+                            )}
+                            {node.type === 'operator' && node.operatorType !== 'newline' && (
+                              <div className="operator-container">
+                                {node.leftParam?.type === 'string' ? (
+                                  <span className="operator-param">{node.leftParam.value}</span>
+                                ) : (
+                                  <input type="text" value={node.leftParam?.value || ''} readOnly className="operator-param" />
+                                )}
+                                
+                                <span className="operator-symbol">{node.operatorType}</span>
+                                
+                                {node.rightParam?.type === 'string' ? (
+                                  <span className="operator-param">{node.rightParam.value}</span>
+                                ) : (
+                                  <input type="text" value={node.rightParam?.value || ''} readOnly className="operator-param" />
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {index < editedPolicy.subPoliciesNodes.length - 1 && 
+                         !(node.type === 'operator' && node.operatorType === 'newline') &&
+                         !(editedPolicy.subPoliciesNodes[index+1].type === 'operator' && 
+                           editedPolicy.subPoliciesNodes[index+1].operatorType === 'newline') && (
+                          <div className="node-connector">
+                            <div className="connector-line"></div>
+                            <div className="connector-arrow">→</div>
+                          </div>
+                        )}
+                      </React.Fragment>
+                    ))}
                   </div>
                 </div>
                 
-          {/* Charts section */}
+                <div className="node-editor-list">
+                  {editedPolicy?.subPoliciesNodes.map((node, index) => (
+                    <div 
+                      key={index} 
+                      className="node-editor-item"
+                      draggable
+                      onDragStart={() => setDraggedNodeIndex(index)}
+                      onDragOver={(e) => {
+                        e.preventDefault(); // Allow drop
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (draggedNodeIndex !== null && draggedNodeIndex !== index) {
+                          // Reorder nodes
+                          const updatedNodes = [...editedPolicy.subPoliciesNodes];
+                          const draggedNode = updatedNodes[draggedNodeIndex];
+                          // Remove dragged node
+                          updatedNodes.splice(draggedNodeIndex, 1);
+                          // Insert at new position
+                          updatedNodes.splice(index, 0, draggedNode);
+                          setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                          setDraggedNodeIndex(null);
+                        }
+                      }}
+                    >
+                      <div className="drag-handle">
+                        <FaGripVertical />
+                      </div>
+                      
+                      {/* Node Type Select */}
+                      <select 
+                        value={node.type} 
+                        onChange={(e) => {
+                          const type = e.target.value as 'string' | 'stringInput' | 'timeInput' | 'operator';
+                          let updatedNode: NodeType = { ...node, type };
+                          
+                          // Initialize appropriate values based on node type
+                          if (type === 'operator') {
+                            updatedNode = {
+                              ...updatedNode,
+                              operatorType: 'and',
+                              leftParam: { type: 'string', value: 'Value A' },
+                              rightParam: { type: 'string', value: 'Value B' },
+                            };
+                          } else if (type === 'timeInput') {
+                            updatedNode = {
+                              ...updatedNode,
+                              timeFormat: 'specific',
+                              value: ''
+                            };
+                          }
+                          
+                          const updatedNodes = [...editedPolicy.subPoliciesNodes];
+                          updatedNodes[index] = updatedNode;
+                          setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                        }}
+                      >
+                        <option value="string">String Value</option>
+                        <option value="stringInput">String Input</option>
+                        <option value="timeInput">Time Input</option>
+                        <option value="operator">Operator</option>
+                      </select>
+                      
+                      {/* String Value: just need label */}
+                      {node.type === 'string' && (
+                        <input 
+                          type="text" 
+                          value={node.label} 
+                          placeholder="Text to display"
+                          onChange={(e) => {
+                            const updatedNodes = [...editedPolicy.subPoliciesNodes];
+                            updatedNodes[index] = {...node, label: e.target.value};
+                            setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                          }}
+                        />
+                      )}
+                      
+                      {/* String Input: need label and default value */}
+                      {node.type === 'stringInput' && (
+                        <>
+                          <div>
+                            <div>Label:</div>
+                            <input 
+                              type="text" 
+                              value={node.label} 
+                              placeholder="Input label"
+                              onChange={(e) => {
+                                const updatedNodes = [...editedPolicy.subPoliciesNodes];
+                                updatedNodes[index] = {...node, label: e.target.value};
+                                setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <div>Default value:</div>
+                            <input 
+                              type="text" 
+                              value={node.value || ''} 
+                              placeholder="Default value"
+                              onChange={(e) => {
+                                const updatedNodes = [...editedPolicy.subPoliciesNodes];
+                                updatedNodes[index] = {...node, value: e.target.value};
+                                setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                              }}
+                            />
+                          </div>
+                        </>
+                      )}
+                      
+                      {/* Time Input: need label, format and default value */}
+                      {node.type === 'timeInput' && (
+                        <>
+                          <div>
+                            <div>Label:</div>
+                            <input 
+                              type="text" 
+                              value={node.label} 
+                              placeholder="Time label"
+                              onChange={(e) => {
+                                const updatedNodes = [...editedPolicy.subPoliciesNodes];
+                                updatedNodes[index] = {...node, label: e.target.value};
+                                setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <div>Time format:</div>
+                            <select
+                              value={node.timeFormat || 'specific'}
+                              onChange={(e) => {
+                                const updatedNodes = [...editedPolicy.subPoliciesNodes];
+                                updatedNodes[index] = {
+                                  ...node, 
+                                  timeFormat: e.target.value as 'specific' | 'duration',
+                                  value: '' // Reset value when changing format
+                                };
+                                setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                              }}
+                            >
+                              <option value="specific">Specific time</option>
+                              <option value="duration">Duration</option>
+                            </select>
+                          </div>
+                          <div>
+                            <div>Default value:</div>
+                            {node.timeFormat === 'duration' ? (
+                              <input 
+                                type="text" 
+                                value={node.value || ''} 
+                                placeholder="e.g. 30ms, 5s"
+                                onChange={(e) => {
+                                  const updatedNodes = [...editedPolicy.subPoliciesNodes];
+                                  updatedNodes[index] = {...node, value: e.target.value};
+                                  setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                                }}
+                              />
+                            ) : (
+                              <input 
+                                type="time" 
+                                value={node.value || ''} 
+                                onChange={(e) => {
+                                  const updatedNodes = [...editedPolicy.subPoliciesNodes];
+                                  updatedNodes[index] = {...node, value: e.target.value};
+                                  setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                                }}
+                              />
+                            )}
+                          </div>
+                        </>
+                      )}
+                      
+                      {/* Operator Node: need operator type and both parameters */}
+                      {node.type === 'operator' && (
+                        <div style={{gridColumn: "span 2"}}>
+                          <select 
+                            value={node.operatorType || 'and'} 
+                            onChange={(e) => {
+                              const updatedNodes = [...editedPolicy.subPoliciesNodes];
+                              updatedNodes[index] = {...node, operatorType: e.target.value};
+                              setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                            }}
+                            style={{marginBottom: "10px", width: "100%"}}
+                          >
+                            <option value="and">AND</option>
+                            <option value="or">OR</option>
+                            <option value="xor">XOR</option>
+                            <option value="lt">&lt; (Less Than)</option>
+                            <option value="gt">&gt; (Greater Than)</option>
+                            <option value="eq">== (Equals)</option>
+                            <option value="seq">=== (Strict Equals)</option>
+                            <option value="newline">New Line</option>
+                          </select>
+                          
+                          {node.operatorType !== 'newline' && (
+                            <div className="operator-node-editor">
+                              {/* Left Parameter */}
+                              <div>
+                                <select 
+                                  className="param-type-select"
+                                  value={node.leftParam?.type || 'string'} 
+                                  onChange={(e) => {
+                                    const updatedNodes = [...editedPolicy.subPoliciesNodes];
+                                    updatedNodes[index] = {
+                                      ...node, 
+                                      leftParam: {
+                                        type: e.target.value as 'string' | 'input',
+                                        value: node.leftParam?.value || ''
+                                      }
+                                    };
+                                    setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                                  }}
+                                >
+                                  <option value="string">Text</option>
+                                  <option value="input">Input Field</option>
+                                </select>
+                                <input 
+                                  type="text" 
+                                  value={node.leftParam?.value || ''} 
+                                  placeholder="Left parameter"
+                                  onChange={(e) => {
+                                    const updatedNodes = [...editedPolicy.subPoliciesNodes];
+                                    updatedNodes[index] = {
+                                      ...node, 
+                                      leftParam: {
+                                        ...(node.leftParam || { type: 'string' }),
+                                        value: e.target.value
+                                      }
+                                    };
+                                    setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                                  }}
+                                />
+                              </div>
+                              
+                              {/* Operator Display */}
+                              <div className="operator-symbol" style={{textAlign: "center"}}>
+                                {node.operatorType}
+                              </div>
+                              
+                              {/* Right Parameter */}
+                              <div>
+                                <select 
+                                  className="param-type-select"
+                                  value={node.rightParam?.type || 'string'} 
+                                  onChange={(e) => {
+                                    const updatedNodes = [...editedPolicy.subPoliciesNodes];
+                                    updatedNodes[index] = {
+                                      ...node, 
+                                      rightParam: {
+                                        type: e.target.value as 'string' | 'input',
+                                        value: node.rightParam?.value || ''
+                                      }
+                                    };
+                                    setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                                  }}
+                                >
+                                  <option value="string">Text</option>
+                                  <option value="input">Input Field</option>
+                                </select>
+                                <input 
+                                  type="text" 
+                                  value={node.rightParam?.value || ''} 
+                                  placeholder="Right parameter"
+                                  onChange={(e) => {
+                                    const updatedNodes = [...editedPolicy.subPoliciesNodes];
+                                    updatedNodes[index] = {
+                                      ...node, 
+                                      rightParam: {
+                                        ...(node.rightParam || { type: 'string' }),
+                                        value: e.target.value
+                                      }
+                                    };
+                                    setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      <button onClick={() => {
+                        const updatedNodes = editedPolicy.subPoliciesNodes.filter((_, i) => i !== index);
+                        setEditedPolicy({...editedPolicy, subPoliciesNodes: updatedNodes});
+                      }}>Remove</button>
+                    </div>
+                  ))}
+                  
+                  {/* Add Node button */}
+                  <button 
+                    className="add-node-button"
+                    onClick={() => {
+                      setEditedPolicy({
+                        ...editedPolicy!, 
+                        subPoliciesNodes: [
+                          ...editedPolicy!.subPoliciesNodes, 
+                          { label: "New Node", type: "string" }
+                        ]
+                      });
+                    }}
+                  >
+                    <FaPlus /> Add New Node
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="nodes-list">
+                  <h3>Applied Nodes:</h3>
+                  <div className="node-flow-preview">
+                    {selectedPolicy.subPoliciesNodes.map((node, index) => (
+                      <React.Fragment key={index}>
+                        {node.type === 'operator' && node.operatorType === 'newline' ? (
+                          <div className="node-flow-break"></div>
+                        ) : (
+                          <div className={`node-flow-item node-type-${node.type}`}>
+                            {node.type === 'string' && (
+                              <span className="node-label">{node.label}</span>
+                            )}
+                            {node.type === 'stringInput' && (
+                              <div>
+                                <span className="node-label">{node.label}</span>
+                                <input type="text" value={node.value || ''} readOnly />
+                              </div>
+                            )}
+                            {node.type === 'timeInput' && (
+                              <div>
+                                <span className="node-label">{node.label}</span>
+                                <input 
+                                  type={node.timeFormat === 'duration' ? 'text' : 'time'} 
+                                  value={node.value || ''} 
+                                  readOnly 
+                                />
+                              </div>
+                            )}
+                            {node.type === 'operator' && node.operatorType !== 'newline' && (
+                              <div className="operator-container">
+                                {node.leftParam?.type === 'string' ? (
+                                  <span className="operator-param">{node.leftParam.value}</span>
+                                ) : (
+                                  <input type="text" value={node.leftParam?.value || ''} readOnly className="operator-param" />
+                                )}
+                                
+                                <span className="operator-symbol">{node.operatorType}</span>
+                                
+                                {node.rightParam?.type === 'string' ? (
+                                  <span className="operator-param">{node.rightParam.value}</span>
+                                ) : (
+                                  <input type="text" value={node.rightParam?.value || ''} readOnly className="operator-param" />
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {index < selectedPolicy.subPoliciesNodes.length - 1 && 
+                         !(node.type === 'operator' && node.operatorType === 'newline') &&
+                         !(selectedPolicy.subPoliciesNodes[index+1].type === 'operator' && 
+                           selectedPolicy.subPoliciesNodes[index+1].operatorType === 'newline') && (
+                          <div className="node-connector">
+                            <div className="connector-line"></div>
+                            <div className="connector-arrow">→</div>
+                          </div>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+                <div className="functionality-description">
+                  <p>This policy monitors and detects abnormal patterns based on the configured nodes.</p>
+                  <p>When triggered, it will generate alerts according to the defined thresholds and parameters.</p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+        
+        {/* Charts section */}
         <div className="signal-section full-width">
           <h2>SIGNAL ANALYTICS</h2>
           <div className="charts-container">
