@@ -90,6 +90,13 @@ interface OperatorParam {
   value: string;
 }
 
+
+interface MainNavigationProps {
+  activeTab: string;
+  setActiveTab: (tab: 'policies' | 'investigations' | 'signals') => void;
+}
+
+
 // Add this helper function to convert operator types to symbols
 const getOperatorSymbol = (operatorType?: string): string => {
   switch (operatorType?.toLowerCase()) {
@@ -111,7 +118,7 @@ const getOperatorSymbol = (operatorType?: string): string => {
   }
 };
 
-const Signals: React.FC = () => {
+const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => {
   const [selectedPolicy, setSelectedPolicy] = useState<PolicyNode | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedPolicy, setEditedPolicy] = useState<PolicyNode | null>(null);
@@ -146,8 +153,135 @@ const Signals: React.FC = () => {
 
   // Load folder data from localStorage
   useEffect(() => {
+    const initializeFolderData = () => {
+      const currentDate = new Date().toISOString().split('T')[0];
+      const lastMonth = new Date();
+      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      const lastMonthDate = lastMonth.toISOString().split('T')[0];
+      
+      const twoMonthsAgo = new Date();
+      twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+      const twoMonthsAgoDate = twoMonthsAgo.toISOString().split('T')[0];
+
+      const newFolderData: InvestigationFolder[] = [
+        {
+          id: 'folder-1',
+          name: 'Commerce Abuse Investigations',
+          type: 'folder',
+          isOpen: true,
+          children: [
+            {
+              id: 'file-1',
+              name: 'Gift Card Abuse',
+              type: 'file',
+              status: 'in-progress',
+              severity: 'high',
+              dateCreated: lastMonthDate,
+              dates: [{ startDate: lastMonthDate, endDate: currentDate }],
+              assets: ['user_123@example.com', 'user_456@example.com'],
+              domains: ['payment.example.com', 'giftcards.example.com'],
+              description: 'Investigation into the fraudulent use of gift cards across multiple accounts.',
+              assignedTo: 'Sarah Johnson'
+            },
+            {
+              id: 'file-2',
+              name: 'Gift Cards Fake Wallets',
+              type: 'file',
+              status: 'open',
+              severity: 'critical',
+              dateCreated: lastMonthDate,
+              dates: [{ startDate: lastMonthDate, endDate: currentDate }],
+              assets: ['wallet_4352', 'wallet_8766', 'wallet_9023'],
+              domains: ['wallet.example.com', 'accounts.example.com'],
+              description: 'Investigation into creation of fake wallet accounts for gift card laundering.',
+              assignedTo: 'Michael Chen'
+            },
+            {
+              id: 'file-3',
+              name: 'Return Policy Abuse',
+              type: 'file',
+              status: 'in-progress',
+              severity: 'medium',
+              dateCreated: twoMonthsAgoDate,
+              dates: [{ startDate: twoMonthsAgoDate, endDate: currentDate }],
+              assets: ['order_8723', 'order_9821', 'user_789@example.com'],
+              domains: ['returns.example.com', 'orders.example.com'],
+              description: 'Investigation into systematic abuse of return policies by coordinated user groups.',
+              assignedTo: 'Jennifer Smith'
+            },
+            {
+              id: 'file-4',
+              name: 'Denied Assets July',
+              type: 'file',
+              status: 'closed',
+              severity: 'medium',
+              dateCreated: '2023-07-15',
+              dates: [{ startDate: '2023-07-01', endDate: '2023-07-31' }],
+              assets: ['asset_6542', 'asset_7823', 'asset_9012'],
+              domains: ['assets.example.com', 'resources.example.com'],
+              description: 'Review of denied asset transfers during July with suspicious patterns.',
+              assignedTo: 'Robert Taylor'
+            }
+          ]
+        },
+        {
+          id: 'folder-2',
+          name: 'Trust and Identity Investigations',
+          type: 'folder',
+          isOpen: true,
+          children: [
+            {
+              id: 'file-5',
+              name: 'Mass. ATO May 24',
+              type: 'file',
+              status: 'in-progress',
+              severity: 'critical',
+              dateCreated: '2023-05-24',
+              dates: [{ startDate: '2023-05-24', endDate: '2023-06-15' }],
+              assets: ['accounts_dept', 'login_systems', 'user_auth_db'],
+              domains: ['login.example.com', 'accounts.example.com'],
+              description: 'Investigation into mass account takeover attempts detected on May 24.',
+              assignedTo: 'David Wilson'
+            },
+            {
+              id: 'file-6',
+              name: 'Distributed AOF',
+              type: 'file',
+              status: 'open',
+              severity: 'high',
+              dateCreated: lastMonthDate,
+              dates: [{ startDate: lastMonthDate, endDate: currentDate }],
+              assets: ['auth_system', 'client_api', 'verification_service'],
+              domains: ['api.example.com', 'auth.example.com'],
+              description: 'Analysis of distributed account opening fraud campaign from multiple IPs.',
+              assignedTo: 'Lisa Rodriguez'
+            },
+            {
+              id: 'file-7',
+              name: 'Attack from Malaysia',
+              type: 'file',
+              status: 'in-progress',
+              severity: 'high',
+              dateCreated: twoMonthsAgoDate,
+              dates: [{ startDate: twoMonthsAgoDate, endDate: currentDate }],
+              assets: ['frontend_servers', 'backend_api', 'user_credentials'],
+              domains: ['api.example.com', 'app.example.com'],
+              description: 'Investigation into coordinated attack attempts originating from Malaysian IPs.',
+              assignedTo: 'Kevin Park'
+            }
+          ]
+        }
+      ];
+
+      setFolderData(newFolderData);
+      localStorage.setItem('investigationFolderData', JSON.stringify(newFolderData));
+    };
+
+    // Only initialize if there's no data
     const savedFolderData = localStorage.getItem('investigationFolderData');
-    if (savedFolderData) {
+    if (!savedFolderData || JSON.parse(savedFolderData).length === 0) {
+      initializeFolderData();
+    } else {
       setFolderData(JSON.parse(savedFolderData));
     }
   }, []);
@@ -446,7 +580,7 @@ const Signals: React.FC = () => {
   const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
   const [isNotificationVisible, setIsNotificationVisible] = useState(false);
 
-  const addPolicyToCustom = () => {
+  const applySignal = () => {
     if (selectedPolicy) {
       const nodeTitle = selectedPolicy.title || selectedPolicy.label;
       
@@ -457,9 +591,8 @@ const Signals: React.FC = () => {
       const combinedNode = {
         id: selectedPolicy.id,
         title: nodeTitle,
-        label: combinedLabel,
+        label: selectedPolicy.subPoliciesNodes,
         type: 'combined',
-        subPoliciesNodes: selectedPolicy.subPoliciesNodes,
         description: selectedPolicy.description
       };
       
@@ -539,8 +672,7 @@ const Signals: React.FC = () => {
       localStorage.setItem('editedPolicy', JSON.stringify(editedPolicy));
       localStorage.setItem('isEditingSignal', isEditing ? 'true' : 'false');
     }
-    
-    window.location.href = '/investigations';
+    setActiveTab('investigations');
   };
 
   // Find and delete an item from the folder structure
@@ -831,11 +963,11 @@ const Signals: React.FC = () => {
           {/* <button className="back-button" onClick={handleBackToInvestigations}>
             <FaArrowLeft /> Back to Investigations
           </button> */}
-          <h1>Signal Intelligence: {selectedPolicy.label}</h1>
+          <h1>Signal: {selectedPolicy.label}</h1>
         </div>
         <div className="header-right">
-          <button className="add-custom-button" onClick={addPolicyToCustom}>
-            Add to Custom Policies
+          <button className="add-custom-button" onClick={applySignal}>
+              Apply signal
           </button>
         </div>
         {/* Notification */}
@@ -1417,8 +1549,8 @@ const Signals: React.FC = () => {
                       <React.Fragment key={index}>
                         {node.type === 'operator' && node.operatorType === 'newline' ? (
                           <div className="node-flow-break"></div>
-                        ) : (
-                          <div className={`node-flow-item node-type-${node.type} ${node.enabled === false ? 'disabled' : ''}`}>
+                        ) :  node.enabled === true ? (
+                          <div className={`node-flow-item node-type-${node.type} `}>
                             {node.type === 'string' && (
                           <span className="node-label">{node.label}</span>
                             )}
@@ -1456,7 +1588,7 @@ const Signals: React.FC = () => {
                               </div>
                             )}
                           </div>
-                        )}
+                        ) : (<div />)}
                         {index < selectedPolicy.subPoliciesNodes.length - 1 && 
                          !(node.type === 'operator' && node.operatorType === 'newline') &&
                          !(selectedPolicy.subPoliciesNodes[index+1].type === 'operator' && 
@@ -1764,3 +1896,149 @@ const Signals: React.FC = () => {
 };
 
 export default Signals; 
+
+<style>{`
+  /* Additional styles for select dropdowns */
+  
+  /* Improve default select element */
+  select {
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 8px 12px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 16px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+  }
+  
+  /* Style option elements */
+  option {
+    background-color: #333 !important;
+    color: white !important;
+    padding: 12px !important;
+    font-size: 14px !important;
+    white-space: pre !important;
+  }
+  
+  /* WebKit/Blink browsers */
+  select::-webkit-scrollbar {
+    width: 10px;
+    background-color: #333;
+  }
+  
+  select::-webkit-scrollbar-thumb {
+    background-color: #555;
+    border-radius: 5px;
+  }
+  
+  select::-webkit-scrollbar-thumb:hover {
+    background-color: #777;
+  }
+  
+  /* Additional wrapper to create a customized appearance */
+  .custom-select-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+  }
+  
+  .custom-select-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 30px;
+    background-color: #444;
+    pointer-events: none;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+  }
+  
+  /* General fallback styling */
+  select option, 
+  select optgroup {
+    background-color: #333;
+    color: white;
+  }
+  
+  /* Make inputs match select styling */
+  input[type="text"], 
+  input[type="time"] {
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 8px 12px;
+    width: 100%;
+    font-size: 14px;
+    box-sizing: border-box;
+  }
+  
+  input[type="text"]:focus, 
+  input[type="time"]:focus {
+    outline: none;
+    border-color: #777;
+    box-shadow: 0 0 0 2px rgba(120, 120, 120, 0.25);
+  }
+  
+  /* Special styling for operator containers */
+  .operator-container {
+    display: flex;
+    align-items: center;
+    background-color: #2a2a2a;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+  
+  .operator-symbol {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #444;
+    color: #eee;
+    border-radius: 4px;
+    padding: 6px 10px;
+    margin: 0 10px;
+    font-weight: bold;
+    min-width: 30px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  
+  .operator-param {
+    flex: 1;
+    padding: 8px 12px;
+    background-color: #333;
+    border-radius: 4px;
+    color: #eee;
+    border: 1px solid #444;
+  }
+`}</style>
+
+<!-- Add this script to customize select elements -->
+<script dangerouslySetInnerHTML={{
+  __html: `
+    // Add custom wrappers to select elements
+    document.addEventListener('DOMContentLoaded', function() {
+      const selects = document.querySelectorAll('select');
+      selects.forEach(select => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'custom-select-wrapper';
+        select.parentNode.insertBefore(wrapper, select);
+        wrapper.appendChild(select);
+      });
+    });
+  `
+}} /> 

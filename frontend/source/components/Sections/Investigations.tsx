@@ -1,5 +1,7 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
-import { FaFolder, FaHistory,FaFolderOpen, FaPlus, FaDownload, FaTrash, FaEllipsisH, FaCalendarAlt, FaEnvelope, FaGlobe, FaPencilAlt, FaSave, FaTimes, FaSearch, FaChevronDown, FaChevronUp, FaEdit, FaArrowLeft, FaChevronRight, FaArrowRight, FaCalendarDay, FaCheck, FaBug } from 'react-icons/fa';
+  // Add this to the imports at the top
+
+import {  FaFolder, FaHistory, FaFolderOpen, FaPlus, FaDownload, FaTrash, FaEllipsisH, FaCalendarAlt, FaEnvelope, FaGlobe, FaPencilAlt, FaSave, FaTimes, FaSearch, FaChevronDown, FaChevronUp, FaEdit, FaArrowLeft, FaChevronRight, FaArrowRight, FaCalendarDay, FaCheck, FaBug, FaSync, FaCreditCard, FaLock, FaDatabase, FaShieldAlt, FaExchangeAlt } from 'react-icons/fa';
 import { ThemeContext } from '../../context/ThemeContext';
 import '../../styles/Investigations.css';
 import { format } from 'date-fns';
@@ -60,15 +62,15 @@ interface NodeType {
   title?: string;
   type: 'string' | 'stringInput' | 'timeInput' | 'operator';
   value?: string;
+  enabled: boolean;
   operatorType?: string;
 }
 
 // Define PolicyNode type
 interface SubPolicy {
-  label: string;
+  label?: NodeType[];
   type: string;
   id?: string; // Add this property
-  subPoliciesNodes?: NodeType[]; // Add this property
   description?: string; // Add this property for Signals component
 }
 
@@ -79,72 +81,419 @@ interface MainNavigationProps {
   setActiveTab: (tab: 'policies' | 'investigations' | 'signals') => void;
 }
 
+// Define the PolicyNode interface to fix TypeScript errors
+interface PolicyNode {
+  id: string;
+  label: string;
+  color: string;
+  subPoliciesNodes?: SubPolicy[];
+  icon?: React.ReactNode;
+  description?: string;
+}
+
 const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => {
 
   const { darkMode, toggleDarkMode } = useContext(ThemeContext);
   // Move ALL state variables to the top of the component
   const [folderData, setFolderData] = useState<InvestigationFolder[]>([
     {
-      id: 'folder-1',
-      name: 'Active Investigations',
+      id: 'folder-001',
+      name: 'Commerce Abuse Investigations',
       type: 'folder',
-      isOpen: true,
       children: [
         {
-          id: 'inv-001',
-          name: 'Suspicious Login Activity',
+          id: 'file-001',
+          name: 'Gift Card Abuse',
           type: 'file',
-          status: 'open',
+          status: 'in-progress',
           severity: 'high',
-          dateCreated: '2023-09-15',
-          dates: ['2023-09-12', '2023-09-13', { startDate: '2023-09-14', endDate: '2023-09-15' }],
-          assets: ['johndoe@example.com', 'admin@example.com'],
-          domains: ['example.com', 'admin.example.com'],
-          description: 'Multiple failed login attempts from unusual IP addresses detected.',
-          assignedTo: 'John Doe'
+          dateCreated: '2023-07-15',
+          dates: [{ startDate: '2023-07-15', endDate: '2023-08-20' }],
+          assets: ['user123@example.com', 'account456@domain.com'],
+          domains: ['payment.example.com', 'giftcards.example.com'],
+          description: 'Investigation into the fraudulent use of gift cards across multiple accounts.',
+          assignedTo: 'Sarah Johnson'
         },
         {
-          id: 'inv-002',
-          name: 'Unusual Data Transfer',
+          id: 'file-002',
+          name: 'Gift Cards Fake Wallets',
+          type: 'file',
+          status: 'open',
+          severity: 'critical',
+          dateCreated: '2023-08-03',
+          dates: [{ startDate: '2023-08-03', endDate: '2023-08-22' }],
+          assets: ['wallet_4352', 'wallet_8766', 'wallet_9023'],
+          domains: ['wallet.example.com', 'accounts.example.com'],
+          description: 'Investigation into creation of fake wallet accounts for gift card laundering.',
+          assignedTo: 'Michael Chen'
+        },
+        {
+          id: 'file-003',
+          name: 'Return Policy Abuse',
           type: 'file',
           status: 'in-progress',
           severity: 'medium',
-          dateCreated: '2023-09-18',
-          dates: [{ startDate: '2023-09-17', endDate: '2023-09-18' }],
-          assets: ['alicesmith@internal.net', 'tech.support@internal.net'],
-          domains: ['storage.internal.net'],
-          description: 'Large data transfer detected outside of business hours.',
-          assignedTo: 'Alice Smith'
-        }
-      ]
-    },
-    {
-      id: 'folder-2',
-      name: 'Closed Investigations',
-      type: 'folder',
-      isOpen: false,
-      children: [
+          dateCreated: '2023-06-28',
+          dates: [{ startDate: '2023-06-28', endDate: '2023-08-21' }],
+          assets: ['order_8723', 'order_9821', 'user_789@example.com'],
+          domains: ['returns.example.com', 'orders.example.com'],
+          description: 'Investigation into systematic abuse of return policies by coordinated user groups.',
+          assignedTo: 'Jennifer Smith'
+        },
         {
-          id: 'inv-003',
-          name: 'Potential Data Breach',
+          id: 'file-004',
+          name: 'Denied Assets July',
           type: 'file',
           status: 'closed',
-          severity: 'critical',
-          dateCreated: '2023-09-10',
-          dates: ['2023-09-05', '2023-09-06', '2023-09-07'],
-          assets: ['database@example.com', 'api@example.com'],
-          domains: ['api.example.com', 'db.example.com'],
-          description: 'Unauthorized access to customer database. Investigation completed and remediation implemented.',
-          assignedTo: 'John Doe'
+          severity: 'medium',
+          dateCreated: '2023-07-15',
+          dates: [{ startDate: '2023-07-01', endDate: '2023-07-31' }],
+          assets: ['asset_6542', 'asset_7823', 'asset_9012'],
+          domains: ['assets.example.com', 'resources.example.com'],
+          description: 'Review of denied asset transfers during July with suspicious patterns.',
+          assignedTo: 'Robert Taylor'
+        },
+        {
+          id: 'file-005',
+          name: 'Gift Card Promotion Exploitation',
+          type: 'file',
+          status: 'open',
+          severity: 'high',
+          dateCreated: '2023-08-10',
+          dates: [{ startDate: '2023-08-10', endDate: '2023-08-25' }],
+          assets: ['promo_system', 'discount_codes_db'],
+          domains: ['promotions.example.com', 'marketing.example.com'],
+          description: 'Investigation into exploitation of gift card promotion codes.',
+          assignedTo: 'Thomas Lee'
+        },
+        {
+          id: 'file-006',
+          name: 'Multiple Account Checkout Fraud',
+          type: 'file',
+          status: 'in-progress',
+          severity: 'high',
+          dateCreated: '2023-08-05',
+          dates: [{ startDate: '2023-08-05', endDate: '2023-08-22' }],
+          assets: ['checkout_system', 'payment_gateway'],
+          domains: ['checkout.example.com', 'payments.example.com'],
+          description: 'Analysis of checkout fraud pattern using multiple accounts.',
+          assignedTo: 'Amanda Peterson'
+        },
+        {
+          id: 'file-014',
+          name: 'Coupon Stacking Fraud',
+          type: 'file',
+          status: 'open',
+          severity: 'medium',
+          dateCreated: '2023-08-14',
+          dates: [{ startDate: '2023-08-14', endDate: '2023-08-28' }],
+          assets: ['coupon_system', 'promotion_engine'],
+          domains: ['coupons.example.com', 'checkout.example.com'],
+          description: 'Investigation into fraudulent stacking of coupons for excessive discounts.',
+          assignedTo: 'Michelle Thompson'
+        },
+        {
+          id: 'file-015',
+          name: 'Digital Product Reselling Ring',
+          type: 'file',
+          status: 'in-progress',
+          severity: 'high',
+          dateCreated: '2023-08-08',
+          dates: [{ startDate: '2023-08-08', endDate: '2023-08-25' }],
+          assets: ['digital_products', 'license_system'],
+          domains: ['downloads.example.com', 'licensing.example.com'],
+          description: 'Investigation into unauthorized reselling of digital products and license keys.',
+          assignedTo: 'James Wilson'
         }
-      ]
+      ],
+      isOpen: false
     },
     {
-      id: 'folder-3',
-      name: 'Templates',
+      id: 'folder-002',
+      name: 'Trust and Identity Investigations',
       type: 'folder',
-      isOpen: false,
-      children: []
+      children: [
+        {
+          id: 'file-007',
+          name: 'Mass. ATO May 24',
+          type: 'file',
+          status: 'in-progress',
+          severity: 'critical',
+          dateCreated: '2023-05-24',
+          dates: [{ startDate: '2023-05-24', endDate: '2023-06-15' }],
+          assets: ['accounts_dept', 'login_systems', 'user_auth_db'],
+          domains: ['login.example.com', 'accounts.example.com'],
+          description: 'Investigation into mass account takeover attempts detected on May 24.',
+          assignedTo: 'David Wilson'
+        },
+        {
+          id: 'file-008',
+          name: 'Distributed AOF',
+          type: 'file',
+          status: 'open',
+          severity: 'high',
+          dateCreated: '2023-07-18',
+          dates: [{ startDate: '2023-07-18', endDate: '2023-08-22' }],
+          assets: ['auth_system', 'client_api', 'verification_service'],
+          domains: ['api.example.com', 'auth.example.com'],
+          description: 'Analysis of distributed account opening fraud campaign from multiple IPs.',
+          assignedTo: 'Lisa Rodriguez'
+        },
+        {
+          id: 'file-009',
+          name: 'Attack from Malaysia',
+          type: 'file',
+          status: 'in-progress',
+          severity: 'high',
+          dateCreated: '2023-06-30',
+          dates: [{ startDate: '2023-06-30', endDate: '2023-08-15' }],
+          assets: ['frontend_servers', 'backend_api', 'user_credentials'],
+          domains: ['api.example.com', 'app.example.com'],
+          description: 'Investigation into coordinated attack attempts originating from Malaysian IPs.',
+          assignedTo: 'Kevin Park'
+        },
+        {
+          id: 'file-010',
+          name: 'Credential Stuffing August',
+          type: 'file',
+          status: 'open',
+          severity: 'critical',
+          dateCreated: '2023-08-02',
+          dates: [{ startDate: '2023-08-02', endDate: '2023-08-20' }],
+          assets: ['login_portal', 'password_reset_system'],
+          domains: ['login.example.com', 'accounts.example.com'],
+          description: 'Investigation into credential stuffing attacks targeting multiple user accounts.',
+          assignedTo: 'Emma Watson'
+        },
+        {
+          id: 'file-011',
+          name: 'Identity Verification Bypass',
+          type: 'file',
+          status: 'open',
+          severity: 'high',
+          dateCreated: '2023-08-12',
+          dates: [{ startDate: '2023-08-12', endDate: '2023-08-25' }],
+          assets: ['id_verification_system', 'kyc_database'],
+          domains: ['verification.example.com', 'kyc.example.com'],
+          description: 'Analysis of attempts to bypass identity verification systems.',
+          assignedTo: 'Carlos Rodriguez'
+        },
+        {
+          id: 'file-016',
+          name: 'OAuth Token Harvesting',
+          type: 'file',
+          status: 'open',
+          severity: 'critical',
+          dateCreated: '2023-08-15',
+          dates: [{ startDate: '2023-08-15', endDate: '2023-08-29' }],
+          assets: ['oauth_server', 'token_service'],
+          domains: ['auth.example.com', 'api.example.com'],
+          description: 'Investigation into harvesting and misuse of OAuth tokens for unauthorized access.',
+          assignedTo: 'Priya Sharma'
+        },
+        {
+          id: 'file-017',
+          name: 'SSO Provider Compromise',
+          type: 'file',
+          status: 'in-progress',
+          severity: 'critical',
+          dateCreated: '2023-08-01',
+          dates: [{ startDate: '2023-08-01', endDate: '2023-08-24' }],
+          assets: ['sso_service', 'identity_provider'],
+          domains: ['sso.example.com', 'idp.example.com'],
+          description: 'Critical investigation into potential compromise of SSO provider infrastructure.',
+          assignedTo: 'Alex Johnson'
+        }
+      ],
+      isOpen: false
+    },
+    {
+      id: 'folder-003',
+      name: 'Payment Fraud Investigations',
+      type: 'folder',
+      children: [
+        {
+          id: 'file-012',
+          name: 'Credit Card Testing Ring',
+          type: 'file',
+          status: 'in-progress',
+          severity: 'high',
+          dateCreated: '2023-07-28',
+          dates: [{ startDate: '2023-07-28', endDate: '2023-08-25' }],
+          assets: ['payment_processing', 'card_validation_api'],
+          domains: ['payments.example.com', 'checkout.example.com'],
+          description: 'Investigation into a coordinated credit card testing operation.',
+          assignedTo: 'Nicole Barnes'
+        },
+        {
+          id: 'file-013',
+          name: 'Subscription Payment Exploitation',
+          type: 'file',
+          status: 'open',
+          severity: 'medium',
+          dateCreated: '2023-08-09',
+          dates: [{ startDate: '2023-08-09', endDate: '2023-08-24' }],
+          assets: ['subscription_system', 'recurring_billing'],
+          domains: ['subscriptions.example.com', 'billing.example.com'],
+          description: 'Analysis of exploitation in subscription payment systems.',
+          assignedTo: 'Mark Johnson'
+        },
+        {
+          id: 'file-018',
+          name: 'Payment API Manipulation',
+          type: 'file',
+          status: 'open',
+          severity: 'high',
+          dateCreated: '2023-08-16',
+          dates: [{ startDate: '2023-08-16', endDate: '2023-08-30' }],
+          assets: ['payment_api', 'transaction_processor'],
+          domains: ['api.payments.example.com', 'transactions.example.com'],
+          description: 'Investigation into manipulation of payment API requests to alter transaction values.',
+          assignedTo: 'Derek Chen'
+        },
+        {
+          id: 'file-019',
+          name: 'Chargeback Fraud Ring',
+          type: 'file',
+          status: 'in-progress',
+          severity: 'high',
+          dateCreated: '2023-08-11',
+          dates: [{ startDate: '2023-08-11', endDate: '2023-08-26' }],
+          assets: ['payment_gateway', 'order_system'],
+          domains: ['orders.example.com', 'payments.example.com'],
+          description: 'Analysis of coordinated chargeback fraud from related customer accounts.',
+          assignedTo: 'Jessica Martinez'
+        }
+      ],
+      isOpen: false
+    },
+    {
+      id: 'folder-004',
+      name: 'Data Breach Investigations',
+      type: 'folder',
+      children: [
+        {
+          id: 'file-020',
+          name: 'Customer Database Exfiltration',
+          type: 'file',
+          status: 'in-progress',
+          severity: 'critical',
+          dateCreated: '2023-08-05',
+          dates: [{ startDate: '2023-08-05', endDate: '2023-08-25' }],
+          assets: ['customer_database', 'data_warehouse'],
+          domains: ['db.example.com', 'warehouse.example.com'],
+          description: 'Critical investigation into exfiltration of customer PII from primary database.',
+          assignedTo: 'Ryan Thompson'
+        },
+        {
+          id: 'file-021',
+          name: 'API Key Exposure Incident',
+          type: 'file',
+          status: 'open',
+          severity: 'high',
+          dateCreated: '2023-08-14',
+          dates: [{ startDate: '2023-08-14', endDate: '2023-08-28' }],
+          assets: ['api_gateway', 'key_management_system'],
+          domains: ['api.example.com', 'keys.example.com'],
+          description: 'Investigation into exposure of production API keys in public repositories.',
+          assignedTo: 'Laura Kim'
+        },
+        {
+          id: 'file-022',
+          name: 'S3 Bucket Misconfiguration',
+          type: 'file',
+          status: 'closed',
+          severity: 'high',
+          dateCreated: '2023-07-20',
+          dates: [{ startDate: '2023-07-20', endDate: '2023-08-10' }],
+          assets: ['storage_buckets', 'cloud_assets'],
+          domains: ['storage.example.com', 'cloud.example.com'],
+          description: 'Investigation into public access misconfiguration of cloud storage buckets containing sensitive data.',
+          assignedTo: 'Chris Morgan'
+        }
+      ],
+      isOpen: false
+    },
+    {
+      id: 'folder-005',
+      name: 'Insider Threat Investigations',
+      type: 'folder',
+      children: [
+        {
+          id: 'file-023',
+          name: 'Unusual Admin Activity',
+          type: 'file',
+          status: 'open',
+          severity: 'high',
+          dateCreated: '2023-08-17',
+          dates: [{ startDate: '2023-08-17', endDate: '2023-08-31' }],
+          assets: ['admin_console', 'user_management_system'],
+          domains: ['admin.example.com', 'users.example.com'],
+          description: 'Investigation into unusual administrative actions during non-business hours.',
+          assignedTo: 'Michael Scott'
+        },
+        {
+          id: 'file-024',
+          name: 'Suspicious Data Access Patterns',
+          type: 'file',
+          status: 'in-progress',
+          severity: 'medium',
+          dateCreated: '2023-08-13',
+          dates: [{ startDate: '2023-08-13', endDate: '2023-08-27' }],
+          assets: ['sales_database', 'crm_system'],
+          domains: ['crm.example.com', 'sales.example.com'],
+          description: 'Analysis of unusual data access patterns by employee accounts across multiple systems.',
+          assignedTo: 'Katherine Lee'
+        },
+        {
+          id: 'file-025',
+          name: 'Unauthorized System Configuration',
+          type: 'file',
+          status: 'open',
+          severity: 'high',
+          dateCreated: '2023-08-18',
+          dates: [{ startDate: '2023-08-18', endDate: '2023-09-01' }],
+          assets: ['network_infrastructure', 'system_config_files'],
+          domains: ['systems.example.com', 'network.example.com'],
+          description: 'Investigation into unauthorized changes to system configurations by internal users.',
+          assignedTo: 'Brandon Martinez'
+        }
+      ],
+      isOpen: false
+    },
+    {
+      id: 'folder-006',
+      name: 'Network Security Investigations',
+      type: 'folder',
+      children: [
+        {
+          id: 'file-026',
+          name: 'DDoS Attack Patterns',
+          type: 'file',
+          status: 'in-progress',
+          severity: 'high',
+          dateCreated: '2023-08-12',
+          dates: [{ startDate: '2023-08-12', endDate: '2023-08-26' }],
+          assets: ['frontend_servers', 'load_balancers'],
+          domains: ['main.example.com', 'www.example.com'],
+          description: 'Analysis of distributed denial of service attack patterns against primary service endpoints.',
+          assignedTo: 'Jason Kim'
+        },
+        {
+          id: 'file-027',
+          name: 'DNS Hijacking Attempt',
+          type: 'file',
+          status: 'open',
+          severity: 'critical',
+          dateCreated: '2023-08-19',
+          dates: [{ startDate: '2023-08-19', endDate: '2023-09-02' }],
+          assets: ['dns_servers', 'domain_registry'],
+          domains: ['dns.example.com', 'registrar.example.com'],
+          description: 'Critical investigation into attempted DNS redirection attacks against corporate domains.',
+          assignedTo: 'Susan Miller'
+        }
+      ],
+      isOpen: false
     }
   ]);
   
@@ -1122,7 +1471,7 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
         setFolderData(prev => 
           prev.map(folder => 
             folder.id === activeFolder.id 
-              ? { ...folder, children: [...folder.children, newFile], isOpen: true }
+              ? { ...folder, children: [...folder.children, newFile], isOpen: false }
               : folder
           )
         );
@@ -1357,7 +1706,7 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
           console.log('Found target folder, adding item'); // Debugging
           return {
             ...folder,
-            isOpen: true,
+            isOpen: false,
             children: folder.children.filter(child => child.type === 'folder').concat(
               [newItem] as any
             ).concat(
@@ -1374,7 +1723,7 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
                 console.log('Found target subfolder, adding item'); // Debugging
                 return {
                   ...child,
-                  isOpen: true,
+                  isOpen: false,
                   children: [...(child as InvestigationFolder).children, newItem]
                 };
               }
@@ -1702,24 +2051,51 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
           Generate Policies
         </button>
 
-        {/* Display generated policies */}
+        {/* Generated Policies Section */}
         {generatedPolicies.length > 0 && (
           <div className="generated-policies">
-            <h3>Generated Policies</h3>
+            <h3>Generated Policies from Investigation</h3>
+            <p className="policies-description">
+              These policies have been automatically generated based on the selected investigation details.
+              They can be sent to the Signals tab to implement monitoring and alerting.
+            </p>
+            
+            <div className="policies-container">
             {generatedPolicies.map((policy, index) => (
-              <div key={index} className="policy-item">
+                <div key={index} className="policy-card" style={{ borderLeft: `4px solid ${policy.color}` }}>
+                  <div className="policy-header">
+                    <div className="policy-icon">{policy.icon}</div>
                 <h4>{policy.label}</h4>
-                <p>{policy.description}</p>
-                <div className="policy-item-buttons">
-                  <button 
-                    className="watch-signal-button"
-                    onClick={() => navigateToSignals(policy)}
-                  >
-                    Watch Signal
+                  </div>
+                  
+                  <p className="policy-description">{policy.description}</p>
+                  
+                  <div className="policy-details">
+                    <h5>Monitoring Rules:</h5>
+                    <ul>
+                      {policy.subPoliciesNodes?.map((subPolicy, idx) => (
+                        <li key={idx} className="policy-rule">
+                          {typeof subPolicy.label === 'string' 
+                            ? subPolicy.label 
+                            : Array.isArray(subPolicy.label) 
+                              ? subPolicy.label[0]?.label 
+                              : 'Monitor activity'}
+                          {subPolicy.description && (
+                            <div className="rule-description">{subPolicy.description}</div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  <div className="policy-actions">
+                    <button className="send-to-signals" onClick={() => navigateToSignals(policy)}>
+                      Implement in Signals <FaArrowRight />
                   </button>
                 </div>
               </div>
             ))}
+            </div>
           </div>
         )}
       </div>
@@ -2595,7 +2971,7 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
         // Add item to this folder
         return {
           ...folder,
-          isOpen: true, // Open the folder when adding an item
+          isOpen: false, // Open the folder when adding an item
           children: [
             ...folder.children.filter(child => child.type === 'folder'),
             newItem,
@@ -2652,7 +3028,7 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
           return [
             {
               ...firstFolder,
-              isOpen: true,
+              isOpen: false,
               children: [...firstFolder.children, newFile]
             },
             ...prevFolders.slice(1)
@@ -2861,7 +3237,7 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
           return [
             {
               ...firstFolder,
-              isOpen: true,
+              isOpen: false,
               children: [...firstFolder.children, newFile]
             },
             ...prevFolders.slice(1)
@@ -2874,7 +3250,7 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
           name: 'Investigations',
           type: 'folder',
           children: [newFile],
-          isOpen: true
+          isOpen: false
         };
         setFolderData([newFolder]);
       }
@@ -3101,7 +3477,11 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
   <div className="file-item-actions">
     <button 
       className="context-menu-trigger" 
-      onClick={(e) => handleFileContextMenu(e, file.id)}
+      onClick={(e) => {
+        // Make sure we're passing a valid file ID from the current context
+        const fileId = currentFile?.id || '';
+        handleFileContextMenu(e, fileId);
+      }}
     >
       <FaEllipsisH />
     </button>
@@ -3131,89 +3511,400 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
   // New state to hold generated policies
   const [generatedPolicies, setGeneratedPolicies] = useState<PolicyNode[]>([]);
   
-  // Function to generate policies from suspicious leads
+  // Function to generate policies from investigations
   const generatePolicies = () => {
-    const newPolicies: PolicyNode[] = suspiciousLeads.slice(0, Math.floor(Math.random() * 3) + 2).map(lead => ({
-      id: `policy-${Date.now()}-${Math.random()}`, // Generate a unique ID
-      label: `Policy for ${lead.type}`,
+    // Check if we have a selected investigation
+    if (!selectedItem || selectedItem.type !== 'file') {
+      alert('Please select an investigation first to generate relevant policies');
+      return;
+    }
+
+    const investigation = selectedItem as InvestigationFile;
+    let policies: PolicyNode[] = [];
+
+    // Create tailored policies based on the investigation type
+    if (investigation.name.includes('Gift Card') || investigation.description.includes('gift card')) {
+      policies.push({
+        id: `policy-${Date.now()}-${Math.random()}`,
+        label: 'Gift Card Abuse Detection',
       color: '#8B0000',
       subPoliciesNodes: [
-        { label: `Monitor ${lead.asset}`, type: 'default' },
-        { label: `Alert on ${lead.type}`, type: 'default' }
+          { 
+            label: [
+              { label: 'Gift Card Abuse Thresholds:', type: 'string', enabled: true },
+              { 
+                label: 'redemption frequency >', type: 'operator', 
+                operatorType: 'gt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'redemption frequency' },
+                rightParam: { type: 'input', value: '5 per day' }
+              },
+              { 
+                label: 'distinct IPs >', type: 'operator', 
+                operatorType: 'gt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'distinct IPs' },
+                rightParam: { type: 'input', value: '3' }
+              },
+              { label: 'Velocity Patterns:', type: 'string', enabled: true },
+              { 
+                label: 'time between redemptions', type: 'timeInput',
+                timeFormat: 'duration',
+                enabled: true,
+                value: '10m'
+              },
+              { 
+                label: 'suspicious pattern score >', type: 'operator',
+                operatorType: 'gt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'suspicious pattern score' },
+                rightParam: { type: 'input', value: '0.75' }
+              }
+            ],
+            type: 'default',
+            id: `sub-${Date.now()}-1`,
+            description: 'Tracks unusual redemption patterns across user accounts'
+          }
       ],
       icon: <FaBug color="#8B0000" />,
-      description: `Policy to monitor and alert on ${lead.type} involving ${lead.asset}.`
-    }));
-    window.scrollTo({
-      top: document.documentElement.scrollHeight, // Scroll to the bottom of the document
-      behavior: 'smooth' // Smooth scrolling effect
-    });
+        description: 'Comprehensive policy to detect and prevent gift card abuse patterns through multi-factor analysis of redemption data, transaction volumes, and user behavior.'
+      });
+      
+      policies.push({
+        id: `policy-${Date.now()}-${Math.random()}`,
+        label: 'Wallet Creation Anomaly Detection',
+        color: '#800080',
+        subPoliciesNodes: [
+          { 
+            label: [
+              { label: 'Wallet Creation Parameters:', type: 'string', enabled: true },
+              { 
+                label: 'new wallets per hour >', type: 'operator',
+                operatorType: 'gt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'new wallets per hour' },
+                rightParam: { type: 'input', value: '15' }
+              },
+              { 
+                label: 'monitoring window', type: 'timeInput',
+                timeFormat: 'duration',
+                enabled: true,
+                value: '4h' 
+              },
+              { label: 'Connection Analysis:', type: 'string', enabled: true },
+              { 
+                label: 'wallet cluster size >', type: 'operator',
+                operatorType: 'gt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'wallet cluster size' },
+                rightParam: { type: 'input', value: '3' }
+              },
+              { 
+                label: 'transfer velocity', type: 'stringInput',
+                enabled: true,
+                value: 'HIGH'
+              }
+            ],
+            type: 'default',
+            id: `sub-${Date.now()}-2`,
+            description: 'Detects unusual wallet creation patterns and suspicious transfer networks'
+          }
+        ],
+        icon: <FaSync color="#800080" />,
+        description: 'Policy designed to identify fake wallet creation and suspicious transfer patterns that indicate potential money laundering or fraud rings.'
+      });
+    }
+    
+    else if (investigation.name.includes('ATO') || investigation.description.includes('account takeover')) {
+      policies.push({
+        id: `policy-${Date.now()}-${Math.random()}`,
+        label: 'Account Takeover Prevention',
+        color: '#004D99',
+        subPoliciesNodes: [
+          { 
+            label: [
+              { label: 'Login Anomaly Detection:', type: 'string', enabled: true },
+              { 
+                label: 'geo-distance between logins >', type: 'operator',
+                operatorType: 'gt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'geo-distance between logins' },
+                rightParam: { type: 'input', value: '500km' }
+              },
+              { 
+                label: 'time between logins <', type: 'operator',
+                operatorType: 'lt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'time between logins' },
+                rightParam: { type: 'input', value: '2h' }
+              },
+              { label: 'Credential Manipulation:', type: 'string', enabled: true },
+              { 
+                label: 'password resets in window >', type: 'operator',
+                operatorType: 'gt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'password resets in window' },
+                rightParam: { type: 'input', value: '2' }
+              },
+              { 
+                label: 'observation window', type: 'timeInput',
+                timeFormat: 'duration',
+                enabled: true,
+                value: '48h'
+              }
+            ],
+            type: 'default',
+            id: `sub-${Date.now()}-3`,
+            description: 'Monitors impossible travel scenarios and suspicious account modifications'
+          }
+        ],
+        icon: <FaLock color="#004D99" />,
+        description: 'Advanced policy for detecting and preventing account takeover attempts through analysis of login patterns, credential usage, and account modifications.'
+      });
+    }
+    
+    else if (investigation.name.includes('Data') || investigation.description.includes('data breach') || investigation.description.includes('exfiltration')) {
+      policies.push({
+        id: `policy-${Date.now()}-${Math.random()}`,
+        label: 'Data Exfiltration Detection',
+        color: '#CC5500',
+        subPoliciesNodes: [
+          { 
+            label: [
+              { label: 'Data Transfer Monitoring:', type: 'string', enabled: true },
+              { 
+                label: 'outbound data volume >', type: 'operator',
+                operatorType: 'gt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'outbound data volume' },
+                rightParam: { type: 'input', value: '50MB' }
+              },
+              { 
+                label: 'external uploads frequency >', type: 'operator',
+                operatorType: 'gt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'external uploads frequency' },
+                rightParam: { type: 'input', value: '10' }
+              },
+              { label: 'Sensitive Data Access:', type: 'string', enabled: true },
+              { 
+                label: 'sensitive files accessed >', type: 'operator',
+                operatorType: 'gt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'sensitive files accessed' },
+                rightParam: { type: 'input', value: '15' }
+              },
+              { 
+                label: 'detection window', type: 'timeInput',
+                timeFormat: 'duration',
+                enabled: true,
+                value: '12h'
+              }
+            ],
+            type: 'default',
+            id: `sub-${Date.now()}-4`,
+            description: 'Identifies unusual data transfer patterns and sensitive information access'
+          }
+        ],
+        icon: <FaDatabase color="#CC5500" />,
+        description: 'Comprehensive data loss prevention policy that monitors for potential exfiltration through analysis of data transfers, file access patterns, and API usage.'
+      });
+    }
+    
+    else if (investigation.name.includes('Payment') || investigation.description.includes('payment') || investigation.description.includes('credit card')) {
+      policies.push({
+        id: `policy-${Date.now()}-${Math.random()}`,
+        label: 'Payment Fraud Detection',
+        color: '#006400',
+        subPoliciesNodes: [
+          { 
+            label: [
+              { label: 'Transaction Velocity Rules:', type: 'string', enabled: true },
+              { 
+                label: 'transactions per minute >', type: 'operator',
+                operatorType: 'gt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'transactions per minute' },
+                rightParam: { type: 'input', value: '3' }
+              },
+              { 
+                label: 'monitoring duration', type: 'timeInput',
+                timeFormat: 'duration',
+                enabled: true,
+                value: '15m'
+              },
+              { label: 'Card Testing Indicators:', type: 'string', enabled: true },
+              { 
+                label: 'low-value transactions count >', type: 'operator',
+                operatorType: 'gt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'low-value transactions count' },
+                rightParam: { type: 'input', value: '5' }
+              },
+              { 
+                label: 'distinct cards used >', type: 'operator',
+                operatorType: 'gt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'distinct cards used' },
+                rightParam: { type: 'input', value: '2' }
+              }
+            ],
+            type: 'default',
+            id: `sub-${Date.now()}-5`,
+            description: 'Detects card testing patterns and abnormal transaction velocities'
+          }
+        ],
+        icon: <FaCreditCard color="#006400" />,
+        description: 'Advanced fraud detection policy for payment systems, analyzing transaction patterns, card testing behavior, and post-purchase dispute trends.'
+      });
+    }
+    
+    else if (investigation.name.includes('Return') || investigation.description.includes('return policy')) {
+      policies.push({
+        id: `policy-${Date.now()}-${Math.random()}`,
+        label: 'Return Policy Abuse Detection',
+        color: '#B8860B',
+        subPoliciesNodes: [
+          { 
+            label: [
+              { label: 'Return Pattern Analysis:', type: 'string', enabled: true },
+              { 
+                label: 'return frequency >', type: 'operator',
+                operatorType: 'gt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'return frequency' },
+                rightParam: { type: 'input', value: '4 per month' }
+              },
+              { 
+                label: 'time between purchase and return <', type: 'operator',
+                operatorType: 'lt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'time between purchase and return' },
+                rightParam: { type: 'input', value: '48h' }
+              },
+              { label: 'Account Linking:', type: 'string', enabled: true },
+              { 
+                label: 'accounts with shared attributes >', type: 'operator',
+                operatorType: 'gt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'accounts with shared attributes' },
+                rightParam: { type: 'input', value: '3' }
+              },
+              { 
+                label: 'risk scoring threshold', type: 'stringInput',
+                enabled: true,
+                value: 'MEDIUM'
+              }
+            ],
+            type: 'default',
+            id: `sub-${Date.now()}-6`,
+            description: 'Identifies coordinated return abuse across multiple accounts with linked attributes'
+          }
+        ],
+        icon: <FaExchangeAlt color="#B8860B" />,
+        description: 'Policy to detect systematic return policy abuse by monitoring return patterns, purchase behavior, and account relationships.'
+      });
+    }
+    
+    // Default generic policies if none of the specific categories match
+    if (policies.length === 0) {
+      // Create default policy based on investigation name and details
+      policies.push({
+        id: `policy-${Date.now()}-${Math.random()}`,
+        label: `Policy for ${investigation.name}`,
+        color: '#483D8B',
+        subPoliciesNodes: [
+          { 
+            label: [
+              { label: 'Anomaly Detection Parameters:', type: 'string', enabled: true },
+              { 
+                label: 'anomaly score >', type: 'operator',
+                operatorType: 'gt',
+                enabled: true,
+                leftParam: { type: 'string', value: 'anomaly score' },
+                rightParam: { type: 'input', value: '0.7' }
+              },
+              { 
+                label: 'detection sensitivity', type: 'stringInput',
+                enabled: true,
+                value: 'HIGH'
+              },
+              { label: 'Monitoring Configuration:', type: 'string', enabled: true },
+              { 
+                label: 'scan interval', type: 'timeInput',
+                timeFormat: 'duration',
+                enabled: true,
+                value: '4h'
+              },
+              { 
+                label: 'alerting threshold >=', type: 'operator',
+                operatorType: 'gte',
+                enabled: true,
+                leftParam: { type: 'string', value: 'alerting threshold' },
+                rightParam: { type: 'input', value: investigation.severity === 'critical' ? '0.85' : '0.75' }
+              }
+            ],
+            type: 'default',
+            id: `sub-${Date.now()}-7`,
+            description: 'Configurable anomaly detection system with adaptive thresholds'
+          }
+        ],
+        icon: <FaShieldAlt color="#483D8B" />,
+        description: `Custom policy created from investigation "${investigation.name}" to monitor relevant assets and detect similar security incidents in the future.`
+      });
+    }
 
-    setGeneratedPolicies(newPolicies);
+    // Set the policies state and scroll to show the results
+    setGeneratedPolicies(policies);
+    
+    setTimeout(() => {
+      const generatedPoliciesElement = document.querySelector('.generated-policies');
+      if (generatedPoliciesElement) {
+        generatedPoliciesElement.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start'
+        });
+      }
+    }, 100);
   };
 
-  
-  // Add this right after the existing code for generatePolicies function
-  useEffect(() => {
-    if (generatedPolicies.length > 0) {
-      // Give time for the DOM to update before scrolling
-      setTimeout(() => {
-        const generatedPoliciesElement = document.querySelector('.generated-policies');
-        if (generatedPoliciesElement) {
-          generatedPoliciesElement.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start'  // Ensures we scroll to the top of the element
-          });
-          
-          // Additional scroll to ensure it's visible
-          window.scrollBy({
-            top: -80,  // Offset to account for any headers
-            behavior: 'smooth'
-          });
-        }
-      }, 100);
-    }
-  }, [generatedPolicies]);
-
-  // Add this function to navigate to signals
+  // Add this function before the return statement
   const navigateToSignals = (policy: PolicyNode) => {
-    // Store the selected policy in localStorage for access in Signals component
-    localStorage.setItem('selectedPolicy', JSON.stringify(policy));
+    console.log('Original policy:', policy);
     
+    // Create a completely new policy object with only enabled nodes
+    const formattedPolicy = {
+      ...policy,
+      // Replace the entire subPoliciesNodes array with a filtered version
+      subPoliciesNodes: [] // Will be populated with only enabled nodes
+    };
+    
+    // Extract only enabled NodeType items from the nested structure
+    if (policy.subPoliciesNodes && policy.subPoliciesNodes.length > 0) {
+      policy.subPoliciesNodes.forEach(subPolicy => {
+        if (Array.isArray(subPolicy.label)) {
+          // Only keep nodes that don't have enabled: false
+          const enabledNodes = subPolicy.label.filter(node => node.enabled !== false);
+          
+          // Only add to the formatted policy if we have enabled nodes
+          if (enabledNodes.length > 0) {
+            formattedPolicy.subPoliciesNodes = [
+              ...formattedPolicy.subPoliciesNodes,
+              ...enabledNodes
+            ];
+          }
+        }
+      });
+    }
+    
+    console.log('Formatted policy for Signals (enabled nodes only):', formattedPolicy);
+    
+    // Store the filtered policy object in localStorage
+    localStorage.setItem('selectedPolicy', JSON.stringify(formattedPolicy));
+    
+    // Navigate to signals tab
     setActiveTab('signals');
   };
-
-  // Fix the renderUserJourney function if it's incomplete
-  const renderUserJourney = (leadId: string) => {
-    const events = getJourneyEventsForLead(leadId);
-    
-    return (
-      <div className="user-journey">
-        <h4>User Journey Timeline</h4>
-        <table className="journey-table">
-          <thead>
-            <tr>
-              <th>Time</th>
-              <th>Time Diff</th>
-              <th>Action</th>
-              <th>Details</th>
-            </tr>
-          </thead>
-          <tbody>
-            {events.map((event, index) => (
-              <tr key={index} className={index % 2 === 0 ? 'even-row' : 'odd-row'}>
-                <td>{event.time}</td>
-                <td>{event.timeDiff}</td>
-                <td>{event.action}</td>
-                <td>{event.additionalInfo}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
-
   return (
     <div className="investigations-container">
       {/* Overlay for closing menus */}
@@ -3580,6 +4271,101 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
           z-index: 1001 !important;
           cursor: pointer !important;
           pointer-events: auto !important;
+        }
+      `}</style>
+      <style>{`
+        .generated-policies {
+          margin-top: 30px;
+          padding: 20px;
+          background-color: ${darkMode ? '#2a2a2a' : '#f9f9f9'};
+          border-radius: 8px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .policies-description {
+          margin-bottom: 20px;
+          font-size: 0.9rem;
+          color: ${darkMode ? '#ccc' : '#666'};
+        }
+        
+        .policies-container {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 20px;
+        }
+        
+        .policy-card {
+          flex: 1;
+          min-width: 300px;
+          max-width: 450px;
+          padding: 16px;
+          background-color: ${darkMode ? '#333' : 'white'};
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .policy-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 12px;
+        }
+        
+        .policy-icon {
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          background-color: rgba(0,0,0,0.05);
+        }
+        
+        .policy-description {
+          font-size: 0.9rem;
+          line-height: 1.4;
+          margin-bottom: 16px;
+          color: ${darkMode ? '#ddd' : '#555'};
+        }
+        
+        .policy-details h5 {
+          margin-bottom: 8px;
+          font-weight: 600;
+        }
+        
+        .policy-rule {
+          margin-bottom: 8px;
+          font-size: 0.9rem;
+        }
+        
+        .rule-description {
+          font-size: 0.8rem;
+          color: ${darkMode ? '#aaa' : '#777'};
+          margin-top: 2px;
+          margin-left: 8px;
+          font-style: italic;
+        }
+        
+        .policy-actions {
+          margin-top: 16px;
+          display: flex;
+          justify-content: flex-end;
+        }
+        
+        .send-to-signals {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 16px;
+          background-color: ${darkMode ? '#444' : '#f0f0f0'};
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        
+        .send-to-signals:hover {
+          background-color: ${darkMode ? '#555' : '#e0e0e0'};
         }
       `}</style>
     </div>

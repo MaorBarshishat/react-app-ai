@@ -31,7 +31,7 @@ const App: React.FC = () => {
       case 'investigations':
         return <Investigations  activeTab={activeTab} setActiveTab={setActiveTab} />;
       case 'signals':
-        return <Signals />;
+        return <Signals activeTab={activeTab} setActiveTab={setActiveTab}/>;
       default:
         return null;
     }

@@ -19,23 +19,23 @@ import { costumePolicies } from '../Sections/Investigations';
  */
 const Policies = () => {
   const [policiesNodes, setPoliciesNodes] = useState([
-    { label: "DATA", color: "#1E90FF", subPoliciesNodes: ["Invest App", "Loans App", "API", "Splunk", "DL Users Data", "Auth-n"].map(label => ({ label, type: "default" })), icon: <FaDatabase color="#1E90FF" /> },
-    { label: "AI Models", color: "#8A2BE2", subPoliciesNodes: ["Abnormal Volume", "Sensitive Data", "Fraud Rings", "Abnormal Similarity", "Abnormal Seriality", "Distinct Values", "Scripting Detection"].map(label => ({ label, type: "default" })), icon: <FaBrain color="#8A2BE2" /> },
-    { label: "Reputations", color: "#FFD700", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, type: "default" })), icon: <FaStar color="#FFD700" /> },
-    { label: "Assets", color: "#228B22", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, type: "default" })), icon: <FaRegBuilding color="#228B22" /> },
-    { label: "Labels", color: "#FF4500", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, type: "default" })), icon: <FaTag color="#FF4500" /> },
-    { label: "Geo", color: "#00CED1", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, type: "default" })), icon: <FaMapMarked color="#00CED1" /> },
-    { label: "Incidents", color: "#DC143C", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, type: "default" })), icon: <FaExclamationCircle color="#DC143C" /> },
+    { label: "DATA", color: "#1E90FF", subPoliciesNodes: ["Invest App", "Loans App", "API", "Splunk", "DL Users Data", "Auth-n"].map(label => ({ label, title: label ,type: "default" })), icon: <FaDatabase color="#1E90FF" /> },
+    { label: "AI Models", color: "#8A2BE2", subPoliciesNodes: ["Abnormal Volume", "Sensitive Data", "Fraud Rings", "Abnormal Similarity", "Abnormal Seriality", "Distinct Values", "Scripting Detection"].map(label => ({ label, title: label ,type: "default" })), icon: <FaBrain color="#8A2BE2" /> },
+    { label: "Reputations", color: "#FFD700", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, title: label ,type: "default" })), icon: <FaStar color="#FFD700" /> },
+    { label: "Assets", color: "#228B22", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, title: label ,type: "default" })), icon: <FaRegBuilding color="#228B22" /> },
+    { label: "Labels", color: "#FF4500", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, title: label ,type: "default" })), icon: <FaTag color="#FF4500" /> },
+    { label: "Geo", color: "#00CED1", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, title: label ,type: "default" })), icon: <FaMapMarked color="#00CED1" /> },
+    { label: "Incidents", color: "#DC143C", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, title: label ,type: "default" })), icon: <FaExclamationCircle color="#DC143C" /> },
     { label: "Operators", color: "#808080", subPoliciesNodes: [
-      { label: "AND", type: "operator" },
-      { label: "OR", type: "operator" },
-      { label: "{}", type: "default" },
-      { label: "CONTAINS", type: "default" },
-      { label: "THEN", type: "default" },
-      { label: "RELATED TO", type: "default" },
+      { label: "AND", type: "operator" , title: 'AND'},
+      { label: "OR", type: "operator", title: 'OR' },
+      { label: "{}", type: "default" , title: 'GROUP'},
+      { label: "CONTAINS", type: "default" , title: 'CONTAINS'},
+      { label: "THEN", type: "default" , title: 'THEN'},
+      { label: "RELATED TO", type: "default" , title: 'RELATED TO'},
     ], icon: <FaCogs color="#808080" /> },
-    { label: "Actions", color: "#4169E1", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, type: "default" })), icon: <FaPlayCircle color="#4169E1" /> },
-    { label: "Detected Anomalies", color: "#8B0000", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, type: "default" })), icon: <FaBug color="#8B0000" /> },
+    { label: "Actions", color: "#4169E1", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, title: label ,type: "default" })), icon: <FaPlayCircle color="#4169E1" /> },
+    { label: "Detected Anomalies", color: "#8B0000", subPoliciesNodes: ["New", "Open", "Save"].map(label => ({ label, title: label ,type: "default" })), icon: <FaBug color="#8B0000" /> },
     { label: "Custom Policies", color: "#FF8C00", subPoliciesNodes: costumePolicies, icon: <FaCog color="#FF8C00" /> }  // Unique option
   ]);
 
@@ -51,6 +51,7 @@ const Policies = () => {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   const onDragStart = (event, nodeLabel, nodeType, color) => {
+    console.log(nodeLabel, nodeType, color);
     setNode(nodeType, nodeLabel, color);
     event.dataTransfer.effectAllowed = 'move';
   };
@@ -170,8 +171,9 @@ const Policies = () => {
                     onDragStart={(event) => onDragStart(event, subTool.label, subTool.type, tool.color)}
                     draggable
                   >
-                    {subTool.label}
+                    {subTool.title}  {console.log(subTool)}
                   </button>
+                  
                 ))}
               </div>
             )

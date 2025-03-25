@@ -9,6 +9,7 @@ import {
   Background,
   MarkerType
 } from '@xyflow/react';
+import CombinedNode from './nodes/CombinedNode';
 import TextNode from './nodes/TextNode'; 
 import FourWayNode from './nodes/FourWayNode';
 import OperatorNode from './nodes/OperatorNode';
@@ -115,6 +116,7 @@ const DnDFlow = () => {
     fourWay: FourWayNode,
     operator: OperatorNode,
     default: DefaultNode,
+    combined: CombinedNode,
   };
 
   return (

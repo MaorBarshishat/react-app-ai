@@ -257,6 +257,19 @@
   box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.25);
 }
 
+
+
+/* Styling dropdown options */
+select option {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
+/* Change color of selected option */
+select option:checked {
+  background-color: #444;
+}
+
 .profile-description-editor {
   display: flex;
   flex-direction: column;
@@ -1381,6 +1394,7 @@ input:checked + .slider:before {
 .param-type-select {
   margin-bottom: 5px;
 }
+
 
 /* Node input styles */
 .node-flow-item input {
