@@ -8,7 +8,6 @@ export const DnDProvider = ({ children }) => {
   const [type, setType] = useState(null); // מאחסן את ה-type
   const [label, setLabel] = useState(null); // מאחסן את ה-label
   const [color, setColor] = useState(null); // מאחסן את ה-color
-
   // הפונקציה שתשנה את ה-type וה-label
   const setNode = (nodeType, nodeLabel, nodeColor) => {
     setType(nodeType);  // עדכון ה-type

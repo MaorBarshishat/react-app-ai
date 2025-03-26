@@ -274,6 +274,45 @@ const FolderSidebar: React.FC<FolderSidebarProps> = ({
     });
   };
 
+  // Find the section that renders the "Signals" folder
+  const renderFolderContents = (folderName) => {
+    const folder = folders[folderName];
+    if (!folder) return null;
+    
+    return (
+      <div className="folder-contents">
+        {/* Render main folder items */}
+        {folder.items && folder.items.map((item, index) => (
+          <div key={`${folderName}-item-${index}`} className="folder-item" onClick={() => handleItemClick(item)}>
+            {item.name || item.title}
+          </div>
+        ))}
+        
+        {/* Render subfolders */}
+        {folder.subFolders && Object.entries(folder.subFolders).map(([subFolderName, subFolder]) => (
+          <div key={`${folderName}-subfolder-${subFolderName}`} className="subfolder">
+            <div className="subfolder-header">
+              <span className="subfolder-icon">📁</span>
+              <span className="subfolder-name">{subFolderName}</span>
+            </div>
+            
+            <div className="subfolder-contents">
+              {subFolder.items && subFolder.items.map((item, index) => (
+                <div 
+                  key={`${folderName}-${subFolderName}-item-${index}`} 
+                  className="folder-item"
+                  onClick={() => handleItemClick(item)}
+                >
+                  {item.name || item.title}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div 
       className={`folder-sidebar ${className}`} 

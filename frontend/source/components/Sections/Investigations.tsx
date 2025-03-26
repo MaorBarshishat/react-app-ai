@@ -2046,26 +2046,26 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
           </div>
         </div>
 
-        {/* Generate Policies button */}
+        {/* Generate Signals button */}
         <button className="apply-policy-button" onClick={generatePolicies}>
-          Generate Policies
+          Generate Signals
         </button>
 
-        {/* Generated Policies Section */}
+        {/* Generated Signals Section */}
         {generatedPolicies.length > 0 && (
           <div className="generated-policies">
-            <h3>Generated Policies from Investigation</h3>
+            <h3>Generated Signals</h3>
             <p className="policies-description">
-              These policies have been automatically generated based on the selected investigation details.
+              These signals have been automatically generated based on the selected investigation details.
               They can be sent to the Signals tab to implement monitoring and alerting.
             </p>
             
-            <div className="policies-container">
-            {generatedPolicies.map((policy, index) => (
-                <div key={index} className="policy-card" style={{ borderLeft: `4px solid ${policy.color}` }}>
+            <div className="policies-list">
+              {generatedPolicies.map((policy, index) => (
+                <div key={index} className="policy-item" style={{ borderLeft: `4px solid ${policy.color}` }}>
                   <div className="policy-header">
                     <div className="policy-icon">{policy.icon}</div>
-                <h4>{policy.label}</h4>
+                    <h4>{policy.label}</h4>
                   </div>
                   
                   <p className="policy-description">{policy.description}</p>
@@ -2091,10 +2091,10 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
                   <div className="policy-actions">
                     <button className="send-to-signals" onClick={() => navigateToSignals(policy)}>
                       Implement in Signals <FaArrowRight />
-                  </button>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
             </div>
           </div>
         )}
@@ -2982,14 +2982,17 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
         // Look in children folders
         return {
           ...folder,
-          children: [
-            ...updateFolderTreeWithNewItem(
-              folder.children.filter(child => child.type === 'folder') as InvestigationFolder[], 
-              parentId, 
-              newItem
-            ),
-            ...folder.children.filter(child => child.type === 'file')
-          ]
+          children: folder.children.map(child => {
+            if (child.type === 'folder' && child.id === parentId) {
+              console.log('Found target subfolder, adding item'); // Debugging
+              return {
+                ...child,
+                isOpen: false,
+                children: [...(child as InvestigationFolder).children, newItem]
+              };
+            }
+            return child;
+          })
         };
       }
       return folder;
@@ -3868,13 +3871,24 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
     }, 100);
   };
 
-  // Add this function before the return statement
+  // Modify the navigateToSignals function to include source investigation ID
   const navigateToSignals = (policy: PolicyNode) => {
     console.log('Original policy:', policy);
+    
+    // Get the current investigation ID
+    const sourceInvestigationId = selectedItem && selectedItem.type === 'file' 
+      ? selectedItem.id 
+      : null;
+      
+    if (!sourceInvestigationId) {
+      alert('Please select an investigation first');
+      return;
+    }
     
     // Create a completely new policy object with only enabled nodes
     const formattedPolicy = {
       ...policy,
+      sourceInvestigationId, // Add the source investigation ID
       // Replace the entire subPoliciesNodes array with a filtered version
       subPoliciesNodes: [] // Will be populated with only enabled nodes
     };
@@ -3897,7 +3911,7 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
       });
     }
     
-    console.log('Formatted policy for Signals (enabled nodes only):', formattedPolicy);
+    console.log('Formatted policy for Signals:', formattedPolicy);
     
     // Store the filtered policy object in localStorage
     localStorage.setItem('selectedPolicy', JSON.stringify(formattedPolicy));
@@ -3905,6 +3919,15 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
     // Navigate to signals tab
     setActiveTab('signals');
   };
+
+  // Add this useEffect to reset generated signals when switching investigations
+  useEffect(() => {
+    // Reset generated signals when user selects a different investigation
+    if (selectedItem && selectedItem.type === 'file') {
+      setGeneratedPolicies([]);
+    }
+  }, [selectedItem?.id]); // Only depends on the selected item ID changing
+
   return (
     <div className="investigations-container">
       {/* Overlay for closing menus */}
@@ -4288,20 +4311,19 @@ const Investigations: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab
           color: ${darkMode ? '#ccc' : '#666'};
         }
         
-        .policies-container {
+        .policies-list {
           display: flex;
-          flex-wrap: wrap;
+          flex-direction: column;
           gap: 20px;
         }
         
-        .policy-card {
-          flex: 1;
-          min-width: 300px;
-          max-width: 450px;
+        .policy-item {
+          width: 100%;
           padding: 16px;
           background-color: ${darkMode ? '#333' : 'white'};
           border-radius: 8px;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          margin-bottom: 16px;
         }
         
         .policy-header {

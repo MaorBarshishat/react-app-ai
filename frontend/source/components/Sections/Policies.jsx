@@ -51,7 +51,10 @@ const Policies = () => {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   const onDragStart = (event, nodeLabel, nodeType, color) => {
-    console.log(nodeLabel, nodeType, color);
+    if(typeof(nodeLabel) === 'object'){
+      const temp = JSON.stringify(nodeLabel);
+      nodeLabel = temp;
+    }
     setNode(nodeType, nodeLabel, color);
     event.dataTransfer.effectAllowed = 'move';
   };

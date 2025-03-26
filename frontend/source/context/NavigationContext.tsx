@@ -25,4 +25,52 @@ export const useNavigation = () => {
     throw new Error('useNavigation must be used within a NavigationProvider');
   }
   return context;
+};
+
+// Find the reducer or state management logic
+const navigationReducer = (state, action) => {
+  switch (action.type) {
+    // ... existing cases ...
+    
+    case 'ADD_ITEM_TO_FOLDER':
+      const { payload, folder, subFolder } = action;
+      
+      // Create a copy of the current folders
+      const updatedFolders = { ...state.folders };
+      
+      // Ensure the folder exists
+      if (!updatedFolders[folder]) {
+        updatedFolders[folder] = { items: [], subFolders: {} };
+      }
+      
+      // Ensure the subFolder exists
+      if (subFolder) {
+        if (!updatedFolders[folder].subFolders) {
+          updatedFolders[folder].subFolders = {};
+        }
+        
+        if (!updatedFolders[folder].subFolders[subFolder]) {
+          updatedFolders[folder].subFolders[subFolder] = { items: [] };
+        }
+        
+        // Add the item to the subFolder
+        updatedFolders[folder].subFolders[subFolder].items = [
+          payload,
+          ...updatedFolders[folder].subFolders[subFolder].items
+        ];
+      } else {
+        // Add to the main folder if no subFolder specified
+        updatedFolders[folder].items = [
+          payload,
+          ...updatedFolders[folder].items
+        ];
+      }
+      
+      return {
+        ...state,
+        folders: updatedFolders
+      };
+      
+    // ... other cases ...
+  }
 }; 

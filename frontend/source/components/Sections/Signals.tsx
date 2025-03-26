@@ -38,6 +38,7 @@ interface PolicyNode {
   subPoliciesNodes: NodeType[];
   icon: React.ReactNode;
   description: string;
+  sourceInvestigationId?: string;
   profile?: {
     createdDate: string;
     activeSince: string;
@@ -150,6 +151,9 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
   // Add these new states
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editedProfile, setEditedProfile] = useState<any>(null);
+
+  // Add this state for drag and drop functionality
+  const [draggedNodeIndex, setDraggedNodeIndex] = useState<number | null>(null);
 
   // Load folder data from localStorage
   useEffect(() => {
@@ -521,23 +525,150 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
     });
   };
 
-  // Add this function to render signals for an investigation
+  // Add this state to track saved signals for each investigation
+  const [savedSignals, setSavedSignals] = useState<{[investigationId: string]: any[]}>({});
+
+  // Add a useEffect to load saved signals from localStorage on component mount
+  useEffect(() => {
+    const savedSignalsData = localStorage.getItem('savedSignals');
+    if (savedSignalsData) {
+      try {
+        setSavedSignals(JSON.parse(savedSignalsData));
+      } catch (e) {
+        console.error('Error loading saved signals:', e);
+      }
+    }
+  }, []);
+
+  // Modify the applySignal function
+  const applySignal = () => {
+    if (selectedPolicy) {
+      const nodeTitle = selectedPolicy.title || selectedPolicy.label;
+      
+      // Use the existing sourceInvestigationId or get it from selectedItem
+      let sourceInvestigationId = selectedPolicy.sourceInvestigationId;
+      
+      // If no sourceInvestigationId exists but we have a selected investigation file, use that
+      if (!sourceInvestigationId && selectedItem && selectedItem.type === 'file') {
+        sourceInvestigationId = selectedItem.id;
+        
+        // Also update the selectedPolicy with this ID
+        setSelectedPolicy({
+          ...selectedPolicy,
+          sourceInvestigationId: selectedItem.id
+        });
+      }
+      
+      if (!sourceInvestigationId) {
+        console.error("Cannot save signal: No source investigation ID found");
+        setNotificationType('error');
+        setNotification("Please select an investigation first");
+        setIsNotificationVisible(true);
+        
+        setTimeout(() => {
+          setIsNotificationVisible(false);
+          setNotification('');
+        }, 3000);
+        return;
+      }
+      
+      const combinedNode = {
+        id: selectedPolicy.id,
+        title: nodeTitle,
+        label: selectedPolicy.subPoliciesNodes,
+        type: 'combined',
+        description: selectedPolicy.description,
+        sourceInvestigationId // Make sure this property is carried forward
+      };
+      
+      // Add to custom policies
+      const existingIndex = costumePolicies.findIndex(
+        existingPolicy => existingPolicy.id === selectedPolicy.id
+      );
+      
+      if (existingIndex >= 0) {
+        costumePolicies[existingIndex] = {
+          ...costumePolicies[existingIndex],
+          description: selectedPolicy.description
+        };
+        setNotificationType('success');
+        setNotification("Policy updated in Custom Policies!");
+      } else {
+        costumePolicies.push(combinedNode);
+        setNotificationType('success');
+        setNotification("Policy added to Custom Policies!");
+      }
+      
+      // Save the signal under its source investigation folder
+      setSavedSignals(prev => {
+        const investigationSignals = [...(prev[sourceInvestigationId] || [])];
+        
+        // Check if signal already exists
+        const signalIndex = investigationSignals.findIndex(s => s.id === selectedPolicy.id);
+        
+        if (signalIndex >= 0) {
+          // Update existing signal
+          investigationSignals[signalIndex] = selectedPolicy;
+        } else {
+          // Add new signal
+          investigationSignals.push(selectedPolicy);
+        }
+        
+        const updatedSignals = {
+          ...prev,
+          [sourceInvestigationId]: investigationSignals
+        };
+        
+        // Save to localStorage
+        localStorage.setItem('savedSignals', JSON.stringify(updatedSignals));
+        
+        return updatedSignals;
+      });
+      
+      setIsNotificationVisible(true);
+      
+      setTimeout(() => {
+        setIsNotificationVisible(false);
+        setNotification('');
+      }, 1000);
+    }
+  };
+
+  // Update the renderSignalsForInvestigation function
   const renderSignalsForInvestigation = (investigation: InvestigationFile, level: number) => {
-    // If there's a selected policy, show it as a child of the selected investigation
-    if (selectedPolicy && selectedItem?.id === investigation.id) {
+    // Get saved signals for this investigation
+    const investigationSignals = savedSignals[investigation.id] || [];
+    
+    if (investigationSignals.length > 0) {
       return (
-        <div 
-          key={selectedPolicy.id}
-          className="signal-item"
-          style={{ marginLeft: `${level * 20}px` }}
-          onClick={(e) => {
-            e.stopPropagation();
-            // You can add logic here to handle signal selection
-          }}
-        >
-          <div className="signal-content">
-            <FaChartLine className="signal-icon" />
-            <span className="signal-name">{selectedPolicy.label}</span>
+        <div className="investigation-signals-container">
+          <div className="investigation-signals-list">
+            {investigationSignals.map((signal) => (
+              <div 
+                key={signal.id}
+                className="investigation-signal-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  
+                  // Load the clicked signal into the main content area
+                  setSelectedPolicy(signal);
+                  
+                  // If we have an edited version, update that too
+                  setEditedPolicy(signal);
+                  
+                  // Reset editing states
+                  setIsEditing(false);
+                  setIsEditingDescription(false);
+                  setIsEditingFunctionality(false);
+                  
+                  // Save to localStorage
+                  localStorage.setItem('selectedPolicy', JSON.stringify(signal));
+                }}
+              >
+                <FaChartLine className="investigation-signal-icon" />
+                <span className="investigation-signal-name">{signal.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       );
@@ -545,11 +676,13 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
     
     // If no signals yet, show a placeholder
     return (
-      <div 
-        className="empty-signals"
-        style={{ marginLeft: `${level * 20}px`, padding: '5px 10px', opacity: 0.7 }}
-      >
-        No signals available
+      <div className="investigation-signals-container">
+        <div 
+          className="empty-signals"
+          style={{ padding: '5px 10px', opacity: 0.7 }}
+        >
+          No policies available
+        </div>
       </div>
     );
   };
@@ -579,51 +712,6 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
   const [notification, setNotification] = useState<string | null>(null);
   const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
   const [isNotificationVisible, setIsNotificationVisible] = useState(false);
-
-  const applySignal = () => {
-    if (selectedPolicy) {
-      const nodeTitle = selectedPolicy.title || selectedPolicy.label;
-      
-      const combinedLabel = selectedPolicy.subPoliciesNodes
-        .map(node => node.type === 'operator' ? `[${node.label}]` : node.label)
-        .join(' ');
-      
-      const combinedNode = {
-        id: selectedPolicy.id,
-        title: nodeTitle,
-        label: selectedPolicy.subPoliciesNodes,
-        type: 'combined',
-        description: selectedPolicy.description
-      };
-      
-      const existingIndex = costumePolicies.findIndex(
-        existingPolicy => existingPolicy.id === selectedPolicy.id
-      );
-      
-      if (existingIndex >= 0) {
-        costumePolicies[existingIndex] = {
-          ...costumePolicies[existingIndex],
-          description: selectedPolicy.description
-        };
-        setNotificationType('success');
-        setNotification("Policy updated in Custom Policies!");
-      } else {
-        costumePolicies.push(combinedNode);
-        setNotificationType('success');
-        setNotification("Policy added to Custom Policies!");
-      }
-      
-      setIsNotificationVisible(true);
-      
-      setTimeout(() => {
-        setIsNotificationVisible(false);
-        setNotification('');
-      }, 1000);      
-    }
-  };
-
-  // Add this state for tracking the dragging
-  const [draggedNodeIndex, setDraggedNodeIndex] = useState<number | null>(null);
 
   const handleSaveDescription = () => {
     if (editedPolicy) {
@@ -939,6 +1027,19 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
     }
   }, [selectedPolicy]);
 
+  useEffect(() => {
+    // Add custom wrappers to select elements
+    const selects = document.querySelectorAll('select');
+    selects.forEach(select => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'custom-select-wrapper';
+      if (select.parentNode) {
+        select.parentNode.insertBefore(wrapper, select);
+        wrapper.appendChild(select);
+      }
+    });
+  }, []);
+
   if (!selectedPolicy) {
     return (
       <div className="signals-container">
@@ -957,80 +1058,81 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
   }
 
   return (
-    <div className="signals-container">
-      <div className="signals-header">
-        <div className="header-left">
-          {/* <button className="back-button" onClick={handleBackToInvestigations}>
-            <FaArrowLeft /> Back to Investigations
-          </button> */}
-          <h1>Signal: {selectedPolicy.label}</h1>
-        </div>
-        <div className="header-right">
-          <button className="add-custom-button" onClick={applySignal}>
-              Apply signal
-          </button>
-        </div>
-        {/* Notification */}
-        {notification && isNotificationVisible && (
-          <Stack sx={{ position: 'fixed',
-            top: '10%',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 1300,
-            maxWidth: '25%', margin: 'auto' }} spacing={2}>
-            <Alert variant="filled" severity={notificationType}>{notification}</Alert>
-          </Stack>
-        )}
-      </div>
-      
-      <div className="signal-detail-container">
-        {/* Add folder sidebar */}
-        <div className="folder-sidebar" ref={sidebarRef} style={{ width: `${sidebarWidth}%`, position: 'relative' }}>
-          <div 
-            className="resizer" 
-            onMouseDown={handleMouseDown} 
-            style={{ 
-              position: 'absolute', 
-              right: 0, 
-              top: 0, 
-              bottom: 0, 
-              width: '5px', 
-              cursor: 'ew-resize', 
-              backgroundColor: 'transparent' 
-            }} 
-          />
-          <div className="folder-header">
-            <h3>Investigation Files</h3>
+    <>
+      <div className="signals-container">
+        <div className="signals-header">
+          <div className="header-left">
+            {/* <button className="back-button" onClick={handleBackToInvestigations}>
+              <FaArrowLeft /> Back to Investigations
+            </button> */}
+            <h1>Signal: {selectedPolicy.label}</h1>
           </div>
-          <div className="folder-list">
-            {renderFolderStructure(folderData)}
+          <div className="header-right">
+            <button className="add-custom-button" onClick={applySignal}>
+                Apply signal
+            </button>
           </div>
+          {/* Notification */}
+          {notification && isNotificationVisible && (
+            <Stack sx={{ position: 'fixed',
+              top: '10%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 1300,
+              maxWidth: '25%', margin: 'auto' }} spacing={2}>
+              <Alert variant="filled" severity={notificationType}>{notification}</Alert>
+            </Stack>
+          )}
         </div>
         
-        {/* Main content area */}
-        <div className="signal-content" style={{ width: `${100 - sidebarWidth}%` }}>
-        {/* Three sections in one row */}
-        <div className="three-column-row">
-          {/* Profile section - one-third width */}
-          <div className="signal-section profile-section">
-            <h2>PROFILE</h2>
-            
-            <div className="profile-display">
-              <div className="profile-row">
-                <div className="profile-grid-item">
-                  <div className="profile-icon"><FaCalendarAlt /></div>
-                  <div className="profile-content">
-                    <span className="profile-label">Created Date</span><br></br>
-                    <span className="profile-value">{new Date().toLocaleDateString()}</span>
-              </div>
-              </div>
-                
+        <div className="signal-detail-container">
+          {/* Add folder sidebar */}
+          <div className="folder-sidebar" ref={sidebarRef} style={{ width: `${sidebarWidth}%`, position: 'relative' }}>
+            <div 
+              className="resizer" 
+              onMouseDown={handleMouseDown} 
+              style={{ 
+                position: 'absolute', 
+                right: 0, 
+                top: 0, 
+                bottom: 0, 
+                width: '5px', 
+                cursor: 'ew-resize', 
+                backgroundColor: 'transparent' 
+              }} 
+            />
+            <div className="folder-header">
+              <h3>Investigation Files</h3>
+            </div>
+            <div className="folder-list">
+              {renderFolderStructure(folderData)}
+            </div>
+          </div>
+          
+          {/* Main content area */}
+          <div className="signal-content" style={{ width: `${100 - sidebarWidth}%` }}>
+          {/* Three sections in one row */}
+          <div className="three-column-row">
+            {/* Profile section - one-third width */}
+            <div className="signal-section profile-section">
+              <h2>PROFILE</h2>
+              
+              <div className="profile-display">
+                <div className="profile-row">
+                  <div className="profile-grid-item">
+                    <div className="profile-icon"><FaCalendarAlt /></div>
+                    <div className="profile-content">
+                      <span className="profile-label">Created Date</span><br></br>
+                      <span className="profile-value">{new Date().toLocaleDateString()}</span>
+                </div>
+                </div>
+                  
                 <div className="profile-grid-item">
                   <div className="profile-icon"><FaClock /></div>
                   <div className="profile-content">
                     <span className="profile-label">Active Since</span><br></br>
                     <span className="profile-value">{new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}</span>
-              </div>
+                </div>
                 </div>
               </div>
               
@@ -1892,153 +1994,12 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
         />
       )}
     </div>
-  );
+    <style>{`
+      /* Additional styles for select dropdowns */
+      // ... existing styles ...
+    `}</style>
+  </>
+);
 };
 
 export default Signals; 
-
-<style>{`
-  /* Additional styles for select dropdowns */
-  
-  /* Improve default select element */
-  select {
-    background-color: #333;
-    color: #fff;
-    border: 1px solid #555;
-    border-radius: 4px;
-    padding: 8px 12px;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23aaa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 8px center;
-    background-size: 16px;
-    cursor: pointer;
-    width: 100%;
-    font-size: 14px;
-    box-sizing: border-box;
-    transition: all 0.2s ease;
-  }
-  
-  /* Style option elements */
-  option {
-    background-color: #333 !important;
-    color: white !important;
-    padding: 12px !important;
-    font-size: 14px !important;
-    white-space: pre !important;
-  }
-  
-  /* WebKit/Blink browsers */
-  select::-webkit-scrollbar {
-    width: 10px;
-    background-color: #333;
-  }
-  
-  select::-webkit-scrollbar-thumb {
-    background-color: #555;
-    border-radius: 5px;
-  }
-  
-  select::-webkit-scrollbar-thumb:hover {
-    background-color: #777;
-  }
-  
-  /* Additional wrapper to create a customized appearance */
-  .custom-select-wrapper {
-    position: relative;
-    display: inline-block;
-    width: 100%;
-  }
-  
-  .custom-select-wrapper::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 30px;
-    background-color: #444;
-    pointer-events: none;
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
-  }
-  
-  /* General fallback styling */
-  select option, 
-  select optgroup {
-    background-color: #333;
-    color: white;
-  }
-  
-  /* Make inputs match select styling */
-  input[type="text"], 
-  input[type="time"] {
-    background-color: #333;
-    color: #fff;
-    border: 1px solid #555;
-    border-radius: 4px;
-    padding: 8px 12px;
-    width: 100%;
-    font-size: 14px;
-    box-sizing: border-box;
-  }
-  
-  input[type="text"]:focus, 
-  input[type="time"]:focus {
-    outline: none;
-    border-color: #777;
-    box-shadow: 0 0 0 2px rgba(120, 120, 120, 0.25);
-  }
-  
-  /* Special styling for operator containers */
-  .operator-container {
-    display: flex;
-    align-items: center;
-    background-color: #2a2a2a;
-    padding: 12px;
-    border-radius: 6px;
-    margin-bottom: 10px;
-  }
-  
-  .operator-symbol {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #444;
-    color: #eee;
-    border-radius: 4px;
-    padding: 6px 10px;
-    margin: 0 10px;
-    font-weight: bold;
-    min-width: 30px;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  }
-  
-  .operator-param {
-    flex: 1;
-    padding: 8px 12px;
-    background-color: #333;
-    border-radius: 4px;
-    color: #eee;
-    border: 1px solid #444;
-  }
-`}</style>
-
-<!-- Add this script to customize select elements -->
-<script dangerouslySetInnerHTML={{
-  __html: `
-    // Add custom wrappers to select elements
-    document.addEventListener('DOMContentLoaded', function() {
-      const selects = document.querySelectorAll('select');
-      selects.forEach(select => {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'custom-select-wrapper';
-        select.parentNode.insertBefore(wrapper, select);
-        wrapper.appendChild(select);
-      });
-    });
-  `
-}} /> 

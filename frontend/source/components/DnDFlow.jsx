@@ -87,6 +87,14 @@ const DnDFlow = () => {
         color: 'green',
       };
     }
+    else{
+      params.markerEnd = {
+        type: MarkerType.Arrow,
+        width: 20,
+        height: 20,
+        color: 'blue',
+      };
+    }
 
     params.style = {
       stroke: edgeColor,

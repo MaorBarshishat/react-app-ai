@@ -690,6 +690,7 @@ input:checked + .slider:before {
   grid-template-columns: 1fr 1fr;
   gap: 20px;
   margin-top: 15px;
+  height: auto;
 }
 
 .chart-wrapper {
@@ -697,6 +698,7 @@ input:checked + .slider:before {
   border-radius: 10px;
   padding: 15px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  height: 300px;
 }
 
 .chart-wrapper h3 {
@@ -782,7 +784,11 @@ input:checked + .slider:before {
 
 /* Make the functionality section taller */
 .signal-section.full-width {
-  max-height: 800px;  /* Increased from 500px */
+  max-height: none;
+  height: auto;
+  padding: 20px;
+  margin-bottom: 20px;
+  overflow: visible;
 }
 
 /* Drag handle styling */
@@ -1022,7 +1028,7 @@ input:checked + .slider:before {
 
 /* Make each section in the row take full height and width */
 .three-column-row .signal-section {
-  height: 100%;
+  max-height: 100%;
   width: 100%;
 }
 
@@ -1096,14 +1102,13 @@ input:checked + .slider:before {
   white-space: nowrap;
 }
 
-.signal-content {
-  flex-grow: 1;
+.signal-item .signal-content {
   display: flex;
-  flex-direction: column;
-  gap: 20px;
-  overflow-y: auto;
-  height: 100%;
-  padding-right: 10px; /* Add some padding to prevent content from touching the edge */
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  overflow: hidden;
 }
 
 /* Style for the resizer */
@@ -1241,42 +1246,48 @@ input:checked + .slider:before {
 .signal-item {
   display: flex;
   align-items: center;
-  padding: 6px 8px;
+  padding: 4px 8px;
   margin: 2px 0;
   border-radius: 4px;
   cursor: pointer;
   width: calc(100% - 20px);
   box-sizing: border-box;
   background-color: rgba(54, 162, 235, 0.08);
+  transition: all 0.2s ease;
+  height: 28px;
+  overflow: hidden;
+  border-left: 2px solid #36a2eb;
 }
 
 .signal-item:hover {
   background-color: rgba(54, 162, 235, 0.15);
+  transform: translateX(2px);
 }
 
-.signal-content {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.signal-icon {
-  color: #36a2eb;
-  font-size: 0.9rem;
-}
-
-.signal-name {
-  font-size: 0.9rem;
+.signal-item .signal-name {
+  display: inline-block;
+  max-width: calc(100% - 20px);
+  font-size: 0.85rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.signal-item .signal-icon {
+  flex-shrink: 0;
+  color: #36a2eb;
+  font-size: 0.8rem;
+  width: 14px;
 }
 
 .empty-signals {
   color: var(--color-text-secondary);
   font-style: italic;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   margin: 5px 0;
+  opacity: 0.6;
 }
 
 /* Make three dots visible only on hover */
@@ -1554,4 +1565,136 @@ input:checked + .slider:before {
 
 .policy-title-input::placeholder {
   color: rgba(255, 255, 255, 0.4);
+}
+
+.subfolder {
+  margin-left: 12px;
+  margin-bottom: 8px;
+}
+
+.subfolder-header {
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.subfolder-icon {
+  margin-right: 6px;
+}
+
+.subfolder-name {
+  font-size: 0.9em;
+}
+
+.subfolder-contents {
+  margin-left: 16px;
+}
+
+/* New horizontal policies container styles */
+.horizontal-policies-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px;
+  width: 100%;
+}
+
+.horizontal-policy-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  border-radius: 8px;
+  background-color: rgba(54, 162, 235, 0.08);
+  border-left: 3px solid #36a2eb;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 150px;
+  max-width: 250px;
+  height: auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.horizontal-policy-item:hover {
+  background-color: rgba(54, 162, 235, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.horizontal-policy-item .signal-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.horizontal-policy-item .signal-name {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.horizontal-policy-item .signal-icon {
+  color: #36a2eb;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* Remove the policies-description if it exists */
+.policies-description {
+  display: none;
+}
+
+/* New styles for the investigation signals list */
+.investigation-signals-container {
+  margin-left: 20px;
+  margin-top: 5px;
+}
+
+.investigation-signals-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ddd;
+  margin-bottom: 8px;
+}
+
+.investigation-signals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.investigation-signal-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  background-color: rgba(70, 70, 70, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.investigation-signal-item:hover {
+  background-color: rgba(80, 80, 80, 0.5);
+}
+
+.investigation-signal-icon {
+  color: #61dafb;
+  margin-right: 8px;
+  font-size: 0.85rem;
+}
+
+.investigation-signal-name {
+  font-size: 0.85rem;
+  color: #fff;
+}
+
+.empty-signals {
+  font-size: 0.85rem;
+  color: #999;
 } 
