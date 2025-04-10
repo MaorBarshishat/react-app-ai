@@ -20,14 +20,16 @@ interface NodeType {
   leftParam?: OperatorParam;
   rightParam?: OperatorParam;
   enabled?: boolean;
+  connectionOperator?: 'and' | 'or' | null; // Add this new property to represent the connection to the next node
 }
 
 interface SubPolicy {
-  label: string;
+  label: NodeType[];
   type: string;
   id?: string;
   subPoliciesNodes?: NodeType[];
-  description?: string; // Added description property
+  description?: string;
+  sourceInvestigationId?: string;
 }
 
 interface PolicyNode {
@@ -119,6 +121,139 @@ const getOperatorSymbol = (operatorType?: string): string => {
   }
 };
 
+// Add this function near the other utility functions
+const generateRelevantOperators = (description: string): NodeType[] => {
+  const operators: NodeType[] = [];
+  
+  // Common security patterns
+  const ipCheck: NodeType = {
+    type: 'operator',
+    label: 'IP Check',
+    operatorType: 'matches',
+    leftParam: { type: 'string', value: 'source.ip' },
+    rightParam: { type: 'string', value: '^192\\.168\\.' },
+    connectionOperator: 'and'  // Explicitly set this
+  };
+  
+  const timeCheck: NodeType = {
+    type: 'operator',
+    label: 'Time Check',
+    operatorType: 'gt',
+    leftParam: { type: 'string', value: 'event.timestamp' },
+    rightParam: { type: 'string', value: 'timeThreshold' },
+    connectionOperator: 'and'
+  };
+  
+  const frequencyCheck: NodeType = {
+    type: 'operator',
+    label: 'Frequency Check',
+    operatorType: 'gt',
+    leftParam: { type: 'string', value: 'activity.frequency' },
+    rightParam: { type: 'string', value: '5' },
+    connectionOperator: 'or'
+  };
+  
+  // Add basic checks for all signals
+  operators.push(timeCheck);
+  
+  // Gift card or payment fraud specific operators
+  if (description.toLowerCase().includes('gift card') || 
+      description.toLowerCase().includes('payment') || 
+      description.toLowerCase().includes('fraud')) {
+    
+    operators.push({
+      type: 'operator',
+      label: 'Transaction Check',
+      operatorType: 'gt',
+      leftParam: { type: 'string', value: 'transaction.amount' },
+      rightParam: { type: 'string', value: '500' },
+      connectionOperator: 'or'
+    });
+    
+    operators.push({
+      type: 'operator',
+      label: 'Card Check',
+      operatorType: 'contains',
+      leftParam: { type: 'string', value: 'transaction.method' },
+      rightParam: { type: 'string', value: 'gift_card' },
+      connectionOperator: 'and'
+    });
+    
+    operators.push({
+      type: 'operator',
+      label: 'Multiple Cards',
+      operatorType: 'gt',
+      leftParam: { type: 'string', value: 'user.unique_cards_used' },
+      rightParam: { type: 'string', value: '3' },
+      connectionOperator: 'and'
+    });
+  }
+  
+  // Account takeover specific operators
+  if (description.toLowerCase().includes('account') || 
+      description.toLowerCase().includes('ato') ||
+      description.toLowerCase().includes('takeover')) {
+    
+    operators.push({
+      type: 'operator',
+      label: 'Location Change',
+      operatorType: 'neq',
+      leftParam: { type: 'string', value: 'login.location' },
+      rightParam: { type: 'string', value: 'user.usual_location' },
+      connectionOperator: 'or'
+    });
+    
+    operators.push({
+      type: 'operator',
+      label: 'Device Check',
+      operatorType: 'neq',
+      leftParam: { type: 'string', value: 'login.device_id' },
+      rightParam: { type: 'string', value: 'user.known_devices' },
+      connectionOperator: 'and'
+    });
+    
+    operators.push({
+      type: 'operator',
+      label: 'Password Change',
+      operatorType: 'eq',
+      leftParam: { type: 'string', value: 'account.password_changed' },
+      rightParam: { type: 'string', value: 'true' },
+      connectionOperator: 'or'
+    });
+  }
+  
+  // Attack or security breach specific operators
+  if (description.toLowerCase().includes('attack') || 
+      description.toLowerCase().includes('breach') ||
+      description.toLowerCase().includes('security')) {
+    
+    operators.push(ipCheck);
+    
+    operators.push({
+      type: 'operator',
+      label: 'Auth Failures',
+      operatorType: 'gt',
+      leftParam: { type: 'string', value: 'auth.failed_attempts' },
+      rightParam: { type: 'string', value: '5' },
+      connectionOperator: 'or'
+    });
+    
+    operators.push({
+      type: 'operator',
+      label: 'Admin Access',
+      operatorType: 'eq',
+      leftParam: { type: 'string', value: 'access.admin_functions' },
+      rightParam: { type: 'string', value: 'true' },
+      connectionOperator: 'and'
+    });
+  }
+  
+  // Add frequency check for most signal types
+  operators.push(frequencyCheck);
+  
+  return operators;
+};
+
 const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => {
   const [selectedPolicy, setSelectedPolicy] = useState<PolicyNode | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -154,6 +289,14 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
 
   // Add this state for drag and drop functionality
   const [draggedNodeIndex, setDraggedNodeIndex] = useState<number | null>(null);
+
+  // Add this state near the other useState declarations
+  const [isCanceling, setIsCanceling] = useState(false);
+
+  // Replace the single originalPolicy state with separate states for each section
+  // const [originalPolicy, setOriginalPolicy] = useState<PolicyNode | null>(null);
+  const [originalDescPolicy, setOriginalDescPolicy] = useState<PolicyNode | null>(null);
+  const [originalFuncPolicy, setOriginalFuncPolicy] = useState<PolicyNode | null>(null);
 
   // Load folder data from localStorage
   useEffect(() => {
@@ -540,7 +683,8 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
     }
   }, []);
 
-  // Modify the applySignal function
+  // Update the applySignal function to properly handle connection operators
+
   const applySignal = () => {
     if (selectedPolicy) {
       const nodeTitle = selectedPolicy.title || selectedPolicy.label;
@@ -552,11 +696,38 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
       if (!sourceInvestigationId && selectedItem && selectedItem.type === 'file') {
         sourceInvestigationId = selectedItem.id;
         
-        // Also update the selectedPolicy with this ID
-        setSelectedPolicy({
-          ...selectedPolicy,
-          sourceInvestigationId: selectedItem.id
-        });
+        // Add more relevant operators based on the investigation description
+        if (selectedItem.description) {
+          const relevantOperators = generateRelevantOperators(selectedItem.description);
+          
+          // Find the last subtitle in the current policy
+          const lastSubtitleIndex = [...selectedPolicy.subPoliciesNodes].reverse()
+            .findIndex(node => node.type === 'string');
+          
+          // If there's a subtitle, add the operators after the last one
+          if (lastSubtitleIndex !== -1) {
+            const actualIndex = selectedPolicy.subPoliciesNodes.length - 1 - lastSubtitleIndex;
+            
+            // Add a new subtitle for these automatically generated operators
+            const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+            
+            // Add a "Signal Conditions" subtitle
+            updatedNodes.push({
+              type: 'string',
+              label: 'Signal Conditions',
+              enabled: true
+            });
+            
+            // Add all the relevant operators
+            updatedNodes.push(...relevantOperators);
+            // Update the selectedPolicy with these new nodes
+            setSelectedPolicy({
+              ...selectedPolicy,
+              subPoliciesNodes: updatedNodes,
+              sourceInvestigationId: selectedItem.id
+            });
+          }
+        }
       }
       
       if (!sourceInvestigationId) {
@@ -572,13 +743,62 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
         return;
       }
       
+      // Expand folders in path to show where the signal belongs
+      expandFoldersInPath(sourceInvestigationId);
+      
+      // Process nodes to properly set connectionOperators
+      const processedNodes = [...selectedPolicy.subPoliciesNodes].map((node, index, array) => {
+        // Clone the node
+        const processedNode = { ...node };
+        
+        // Determine if this node should have a connectionOperator
+        
+        // Case 1: It's a subtitle - no connection operator needed
+        if (node.type === 'string') {
+          processedNode.connectionOperator = null;
+          return processedNode;
+        }
+        
+        // Case 2: It's the last node in the array - no connection operator needed
+        if (index === array.length - 1) {
+          processedNode.connectionOperator = null;
+          return processedNode;
+        }
+        
+        // Case 3: Next node is a subtitle - no connection operator needed
+        if (array[index + 1] && array[index + 1].type === 'string') {
+          processedNode.connectionOperator = null;
+          return processedNode;
+        }
+        
+        // Case 4: This node is disabled - no connection operator needed
+        if (node.enabled === false) {
+          processedNode.connectionOperator = null;
+          return processedNode;
+        }
+        
+        // Case 5: Next node is disabled - no connection operator needed
+        if (array[index + 1] && array[index + 1].enabled === false) {
+          processedNode.connectionOperator = null;
+          return processedNode;
+        }
+        
+        // All other cases: Use the existing connection operator or default to 'and'
+        processedNode.connectionOperator = node.connectionOperator || 'and';
+        return processedNode;
+      });
+      
+      // Make sure we're preserving all node properties including correctly processed connectionOperators
       const combinedNode = {
         id: selectedPolicy.id,
         title: nodeTitle,
-        label: selectedPolicy.subPoliciesNodes,
+        label: processedNodes.map(node => ({
+          ...node,
+          enabled: node.enabled === false ? false : true, // Ensure enabled is a boolean
+        })),
         type: 'combined',
         description: selectedPolicy.description,
-        sourceInvestigationId // Make sure this property is carried forward
+        sourceInvestigationId
       };
       
       // Add to custom policies
@@ -589,29 +809,47 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
       if (existingIndex >= 0) {
         costumePolicies[existingIndex] = {
           ...costumePolicies[existingIndex],
-          description: selectedPolicy.description
+          description: selectedPolicy.description,
+          label: combinedNode.label,
         };
         setNotificationType('success');
         setNotification("Policy updated in Custom Policies!");
+        console.log("Updated policy nodes:", combinedNode.label);
       } else {
-        costumePolicies.push(combinedNode);
+        // Convert the combinedNode to match the expected SubPolicy type
+        const convertedNode = {
+          id: combinedNode.id,
+          label: combinedNode.label,
+          title: combinedNode.title,
+          type: combinedNode.type,
+          description: combinedNode.description,
+          sourceInvestigationId: combinedNode.sourceInvestigationId
+        };
+        console.log("New policy nodes:", combinedNode.label);
+        costumePolicies.push(convertedNode);
         setNotificationType('success');
         setNotification("Policy added to Custom Policies!");
       }
       
-      // Save the signal under its source investigation folder
+      // Save the signal under its source investigation folder with proper connection operators
       setSavedSignals(prev => {
         const investigationSignals = [...(prev[sourceInvestigationId] || [])];
+        
+        // Create a copy of selectedPolicy with processed nodes
+        const updatedPolicy = {
+          ...selectedPolicy,
+          subPoliciesNodes: processedNodes
+        };
         
         // Check if signal already exists
         const signalIndex = investigationSignals.findIndex(s => s.id === selectedPolicy.id);
         
         if (signalIndex >= 0) {
           // Update existing signal
-          investigationSignals[signalIndex] = selectedPolicy;
+          investigationSignals[signalIndex] = updatedPolicy;
         } else {
           // Add new signal
-          investigationSignals.push(selectedPolicy);
+          investigationSignals.push(updatedPolicy);
         }
         
         const updatedSignals = {
@@ -625,16 +863,19 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
         return updatedSignals;
       });
       
+      // After saving, show notification
+      setNotificationType('success');
+      setNotification("Signal saved and path expanded in sidebar!");
       setIsNotificationVisible(true);
       
       setTimeout(() => {
         setIsNotificationVisible(false);
         setNotification('');
-      }, 1000);
+      }, 3000);
     }
   };
 
-  // Update the renderSignalsForInvestigation function
+  // Update the renderSignalsForInvestigation function to add more relevant operators when creating new signals
   const renderSignalsForInvestigation = (investigation: InvestigationFile, level: number) => {
     // Get saved signals for this investigation
     const investigationSignals = savedSignals[investigation.id] || [];
@@ -741,17 +982,21 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
     }
   };
 
+  // Then update the handleSaveFunctionality function
   const handleSaveFunctionality = () => {
-    if (editedPolicy) {
-      console.log(editedPolicy);
+    // Skip save if we're canceling
+    if (isCanceling) {
+      setIsCanceling(false);
+      return;
+    }
+    
+    // Existing save functionality
+    if (selectedPolicy && editedPolicy) {
       setSelectedPolicy({
-        ...selectedPolicy!,
-        subPoliciesNodes: editedPolicy.subPoliciesNodes.map(node => ({
-          ...node,
-          enabled: node.enabled !== false // Ensure enabled is explicitly set (default to true)
-        }))
+        ...editedPolicy
       });
-      setIsEditingFunctionality(false);
+      // Save to localStorage if needed
+      localStorage.setItem('selectedPolicy', JSON.stringify(editedPolicy));
     }
   };
 
@@ -1040,6 +1285,162 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
     });
   }, []);
 
+  // Add this new dedicated cancel handler function
+  const handleCancelFunctionality = () => {
+    console.log("originalFuncPolicy", originalFuncPolicy);
+    if (originalFuncPolicy) {
+      // Reset to the pristine original policy
+      setEditedPolicy(JSON.parse(JSON.stringify(originalFuncPolicy)));
+
+      setSelectedPolicy({
+        ...originalFuncPolicy
+      });
+      // Save to localStorage if needed
+      localStorage.setItem('selectedPolicy', JSON.stringify(originalFuncPolicy));
+
+      // Exit edit mode
+      setIsEditingFunctionality(false);
+    }
+  };
+
+  // When entering edit mode, store the original policy
+  const handleEditFunctionality = () => {
+    // Deep clone the current policy as our pristine copy
+    setOriginalFuncPolicy(JSON.parse(JSON.stringify(selectedPolicy)));
+    setIsEditingFunctionality(true);
+  };
+
+  // Do the same for description editing
+  const handleEditDescription = () => {
+    setOriginalDescPolicy(JSON.parse(JSON.stringify(selectedPolicy)));
+    setIsEditingDescription(true);
+  };
+
+  // Description cancel handler
+  const handleCancelDescription = () => {
+    if (originalDescPolicy) {
+      setEditedPolicy(JSON.parse(JSON.stringify(originalDescPolicy)));
+    }
+    setIsEditingDescription(false);
+  };
+
+  // Add this function to find the path to an investigation
+  const getPathToInvestigation = (folders: InvestigationFolder[], investigationId: string): string[] => {
+    const pathParts: string[] = [];
+    
+    const findPath = (folders: InvestigationFolder[], currentPath: string[] = []): boolean => {
+      for (const folder of folders) {
+        const newPath = [...currentPath, folder.name];
+        
+        // Check if the investigation is in this folder
+        const foundInvestigation = folder.children.find(
+          child => child.type === 'file' && child.id === investigationId
+        );
+        
+        if (foundInvestigation) {
+          pathParts.push(...newPath, foundInvestigation.name);
+          return true;
+        }
+        
+        // Look in subfolders
+        if (folder.children.some(child => child.type === 'folder')) {
+          const subfolders = folder.children.filter(
+            child => child.type === 'folder'
+          ) as InvestigationFolder[];
+          
+          if (findPath(subfolders, newPath)) {
+            return true;
+          }
+        }
+      }
+      
+      return false;
+    };
+    
+    findPath(folders);
+    return pathParts;
+  };
+
+  // Add this function to expand all folders in the path
+  const expandFoldersInPath = (investigationId: string) => {
+    const pathParts = getPathToInvestigation(folderData, investigationId);
+    
+    if (pathParts.length === 0) return;
+    
+    // Create a copy of the folder data to modify
+    const updatedFolderData = [...folderData];
+    
+    // Recursive function to find and open folders in the path
+    const openFoldersInPath = (
+      folders: InvestigationFolder[], 
+      targetPath: string[], 
+      currentDepth: number = 0
+    ): boolean => {
+      if (currentDepth >= targetPath.length - 1) return true; // Last item is the investigation
+      
+      for (let i = 0; i < folders.length; i++) {
+        const folder = folders[i];
+        
+        if (folder.name === targetPath[currentDepth]) {
+          // This folder is in our path, open it
+          folders[i] = { ...folder, isOpen: true };
+          
+          // Process subfolders if needed
+          const subfolders = folder.children.filter(
+            child => child.type === 'folder'
+          ) as InvestigationFolder[];
+          
+          if (subfolders.length > 0) {
+            openFoldersInPath(subfolders, targetPath, currentDepth + 1);
+          }
+          
+          return true;
+        }
+      }
+      
+      return false;
+    };
+    
+    openFoldersInPath(updatedFolderData, pathParts);
+    
+    // Update the folder data state
+    setFolderData(updatedFolderData);
+    
+    // Also find and select the investigation
+    const findInvestigation = (folders: InvestigationFolder[]): InvestigationFile | null => {
+      for (const folder of folders) {
+        // Check direct children
+        const foundInvestigation = folder.children.find(
+          child => child.type === 'file' && child.id === investigationId
+        );
+        
+        if (foundInvestigation) {
+          return foundInvestigation as InvestigationFile;
+        }
+        
+        // Check subfolders
+        const subfolders = folder.children.filter(
+          child => child.type === 'folder'
+        ) as InvestigationFolder[];
+        
+        if (subfolders.length > 0) {
+          const result = findInvestigation(subfolders);
+          if (result) return result;
+        }
+      }
+      
+      return null;
+    };
+    
+    const investigation = findInvestigation(updatedFolderData);
+    if (investigation) {
+      setSelectedItem(investigation);
+    }
+    
+    // Save updated folder data to localStorage
+    localStorage.setItem('investigationFolderData', JSON.stringify(updatedFolderData));
+  };
+
   if (!selectedPolicy) {
     return (
       <div className="signals-container">
@@ -1062,16 +1463,25 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
       <div className="signals-container">
         <div className="signals-header">
           <div className="header-left">
-            {/* <button className="back-button" onClick={handleBackToInvestigations}>
-              <FaArrowLeft /> Back to Investigations
-            </button> */}
-            <h1>Signal: {selectedPolicy.label}</h1>
-          </div>
-          <div className="header-right">
+            <h1>{selectedPolicy ? selectedPolicy.label : 'Signal Details'}</h1>
             <button className="add-custom-button" onClick={applySignal}>
                 Apply signal
             </button>
           </div>
+          
+          {/* Add the signal path display here */}
+          {selectedPolicy && selectedPolicy.sourceInvestigationId && (
+            <div className="signal-path">
+              {getPathToInvestigation(folderData, selectedPolicy.sourceInvestigationId)
+                .map((part, index, array) => (
+                  <React.Fragment key={index}>
+                    <span className="path-part">{part}</span>
+                    {index < array.length - 1 && <span className="path-separator">/</span>}
+                  </React.Fragment>
+                ))}
+            </div>
+          )}
+          
           {/* Notification */}
           {notification && isNotificationVisible && (
             <Stack sx={{ position: 'fixed',
@@ -1160,21 +1570,23 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
           <div className="signal-section">
             <h2>DESCRIPTION</h2>
             {!isEditingDescription ? (
-                <button className="section-edit-button" onClick={() => setIsEditingDescription(true)}>
+                <button className="section-edit-button" onClick={handleEditDescription}>
                   <FaEdit />
                 </button>
               ) : (
-                <button className="section-save-button" onClick={() => {
-                  setIsEditingDescription(false);
-                  handleSaveDescription();
-                }}>
-                  <FaSave />
-                </button>
+                <div className="section-button-group">
+                  <button className="section-save-button" onClick={() => {
+                    setIsEditingDescription(false);
+                    handleSaveDescription();
+                  }}>
+                    <FaSave />
+                  </button>
+                  <button className="section-cancel-button" onClick={handleCancelDescription}>
+                    <FaTimes />
+                  </button>
+                </div>
               )}
 
-            <div className="section-header">
-              <h3>Signal Details</h3>
-            </div>
             {isEditingDescription ? (
               <textarea
                 className="description-editor"
@@ -1221,20 +1633,22 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
         <div className="signal-section full-width">
           <h2>FUNCTIONALITY</h2>
           {!isEditingFunctionality ? (
-              <button className="section-edit-button" onClick={() => setIsEditingFunctionality(true)}>
+              <button className="section-edit-button" onClick={handleEditFunctionality}>
                 <FaEdit />
               </button>
             ) : (
-              <button className="section-save-button" onClick={() => {
-                setIsEditingFunctionality(false);
-                handleSaveFunctionality();
-              }}>
-                <FaSave />
-              </button>
+              <div className="section-button-group">
+                <button className="section-save-button" onClick={() => {
+                  handleSaveFunctionality();
+                  setIsEditingFunctionality(false);
+                }}>
+                  <FaSave />
+                </button>
+                <button className="section-cancel-button" onClick={handleCancelFunctionality}>
+                  <FaTimes />
+                </button>
+              </div>
             )}
-          <div className="section-header">
-            <h3>Signal Rules</h3>
-          </div>
           <div className="functionality-content">
             {isEditingFunctionality ? (
               <div className="policy-nodes-editor">
@@ -1297,10 +1711,18 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
                                 )}
                                 
                                 {index < selectedPolicy.subPoliciesNodes.length - 1 && 
-                                !(node.type === 'operator' && node.operatorType === 'newline') &&
+                                !(node.type === 'operator' && node.operatorType === 'newline') && 
                                 !(selectedPolicy.subPoliciesNodes[index+1].type === 'operator' && 
-                                  selectedPolicy.subPoliciesNodes[index+1].operatorType === 'newline') && (
-                                  <span className="flow-connector"></span>
+                                  selectedPolicy.subPoliciesNodes[index+1].operatorType === 'newline') && 
+                                node.type !== 'string' && // Don't show connector after subtitle
+                                selectedPolicy.subPoliciesNodes[index+1].type !== 'string' && // Don't show connector before subtitle
+                                node.enabled !== false && selectedPolicy.subPoliciesNodes[index+1].enabled !== false && (
+                                  <>
+                                    <span className="flow-connector"></span>
+                                    <span className={`flow-connection-operator ${node.connectionOperator === 'or' ? 'or' : ''}`}>
+                                      {node.connectionOperator?.toUpperCase() || 'AND'}
+                                    </span>
+                                  </>
                                 )}
                               </span>
                         )}
@@ -1313,248 +1735,228 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
                 
                 <div className="node-editor-list">
                   {selectedPolicy.subPoliciesNodes.map((node, index) => (
-                    <div 
-                      key={index} 
-                      className="node-editor-item"
-                      draggable
-                      onDragStart={() => setDraggedNodeIndex(index)}
-                      onDragOver={(e) => {
-                        e.preventDefault(); // Allow drop
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        if (draggedNodeIndex !== null && draggedNodeIndex !== index) {
-                          // Reorder nodes
-                          const updatedNodes = [...selectedPolicy.subPoliciesNodes];
-                          const draggedNode = updatedNodes[draggedNodeIndex];
-                          // Remove dragged node
-                          updatedNodes.splice(draggedNodeIndex, 1);
-                          // Insert at new position
-                          updatedNodes.splice(index, 0, draggedNode);
-                          setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
-                          setDraggedNodeIndex(null);
-                        }
-                      }}
-                    >
-                      <div className="node-item-header">
-                        <div className="node-type-badge">{node.type}</div>
-                        <div className="node-toggle-switch">
-                          <label className="switch">
-                            <input 
-                              type="checkbox" 
-                              checked={node.enabled !== false}
-                              onChange={(e) => {
-                                const updatedNodes = [...selectedPolicy.subPoliciesNodes];
-                                updatedNodes[index] = {...node, enabled: e.target.checked};
-                                setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
-                              }}
-                            />
-                            <span className="slider round"></span>
-                          </label>
-                        </div>
-                      </div>
-                      
-                      <div className="node-item-content">
-                      <div className="drag-handle">
-                        <FaGripVertical />
-                      </div>
-                      
-                        {/* Node Type Selector */}
-                        <div className="node-field">
-                          <select 
-                            value={node.type} 
-                            onChange={(e) => {
-                              const type = e.target.value as 'string' | 'stringInput' | 'timeInput' | 'operator';
-                              let updatedNode: NodeType = { ...node, type };
-                              
-                              // Initialize appropriate values based on node type
-                              if (type === 'operator') {
-                                updatedNode = {
-                                  ...updatedNode,
-                                  operatorType: 'and',
-                                  leftParam: { type: 'string', value: 'Value A' },
-                                  rightParam: { type: 'string', value: 'Value B' },
-                                };
-                              } else if (type === 'timeInput') {
-                                updatedNode = {
-                                  ...updatedNode,
-                                  timeFormat: 'specific',
-                                  value: ''
-                                };
-                              }
-                              
-                              const updatedNodes = [...selectedPolicy.subPoliciesNodes];
-                              updatedNodes[index] = updatedNode;
-                              setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
-                            }}
-                          >
-                            <option value="string">String</option>
-                            <option value="stringInput">Input</option>
-                            <option value="timeInput">Time</option>
-                            <option value="operator">Operator</option>
-                          </select>
-                        </div>
-                        
-                        {/* Node-specific fields */}
-                        {node.type === 'string' && (
-                          <div className="node-field">
-                        <input 
-                          type="text" 
-                              value={node.label} 
-                              placeholder="Text to display"
-                          onChange={(e) => {
-                                const updatedNodes = [...selectedPolicy.subPoliciesNodes];
-                                updatedNodes[index] = {...node, label: e.target.value};
-                                setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
-                          }}
-                        />
-                      </div>
-                        )}
-                        
-                        {/* String Input fields */}
-                        {node.type === 'stringInput' && (
-                          <>
-                            <div className="node-field">
-                        <input 
-                          type="text" 
-                          value={node.label} 
-                                placeholder="Label"
-                          onChange={(e) => {
-                                  const updatedNodes = [...selectedPolicy.subPoliciesNodes];
-                            updatedNodes[index] = {...node, label: e.target.value};
-                                  setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
-                          }}
-                        />
-                      </div>
-                            <div className="node-field">
+                    <React.Fragment key={index}>
+                      {/* Render the node editor item as before */}
+                      <div 
+                        style={{ marginLeft: node.type === "string" ? "0px" : "100px" }}
+                        className="node-editor-item"
+                        draggable
+                        onDragStart={() => setDraggedNodeIndex(index)}
+                        onDragOver={(e) => {
+                          e.preventDefault(); // Allow drop
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (draggedNodeIndex !== null && draggedNodeIndex !== index) {
+                            // Reorder nodes
+                            const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                            const draggedNode = updatedNodes[draggedNodeIndex];
+                            // Remove dragged node
+                            updatedNodes.splice(draggedNodeIndex, 1);
+                            // Insert at new position
+                            updatedNodes.splice(index, 0, draggedNode);
+                            setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                            setDraggedNodeIndex(null);
+                          }
+                        }}
+                      >
+                        <div className="node-item-header">
+                          <div className="node-type-badge">{node.type === 'string' ? 'Subtitle' : node.type}</div>
+                          <div className="node-toggle-switch">
+                            <label className="switch">
                               <input 
-                                type="text" 
-                                value={node.value || ''} 
-                                placeholder="Default value"
+                                type="checkbox" 
+                                checked={node.enabled !== false}
                                 onChange={(e) => {
                                   const updatedNodes = [...selectedPolicy.subPoliciesNodes];
-                                  updatedNodes[index] = {...node, value: e.target.value};
+                                  const isChecked = e.target.checked;
+
+                                  // If this is a subtitle node (type string), toggle all nodes until the next subtitle
+                                  if (node.type === 'string') {
+                                    let foundThisNode = false;
+                                    let foundNextSubtitle = false;
+                                    
+                                    updatedNodes.forEach((n, i) => {
+                                      // Mark when we find this node
+                                      if (i === index) {
+                                        foundThisNode = true;
+                                        n.enabled = isChecked;
+                                        return;
+                                      }
+                                      
+                                      // If we already found this subtitle and haven't found the next one yet
+                                      if (foundThisNode && !foundNextSubtitle) {
+                                        // If we find another subtitle, stop updating
+                                        if (n.type === 'string') {
+                                          foundNextSubtitle = true;
+                                          return;
+                                        }
+                                        // Update all nodes that belong to this subtitle
+                                        n.enabled = isChecked;
+                                      }
+                                    });
+                                  } else {
+                                    // For non-subtitle nodes, first check if parent subtitle is enabled
+                                    // Find the parent subtitle
+                                    let parentSubtitleEnabled = true;
+                                    for (let i = index - 1; i >= 0; i--) {
+                                      if (updatedNodes[i].type === 'string') {
+                                        // Found parent subtitle
+                                        parentSubtitleEnabled = updatedNodes[i].enabled !== false;
+                                        break;
+                                      }
+                                    }
+                                    
+                                    // Only allow enabling if parent subtitle is enabled
+                                    if (!parentSubtitleEnabled && isChecked) {
+                                      // Show a notification that parent subtitle must be enabled first
+                                      setNotificationType('error');
+                                      setNotification("Cannot enable node while parent subtitle is disabled");
+                                      setIsNotificationVisible(true);
+                                      
+                                      setTimeout(() => {
+                                        setIsNotificationVisible(false);
+                                        setNotification('');
+                                      }, 3000);
+                                      return; // Prevent the change
+                                    }
+                                    
+                                    // Just update this single node if it's not a subtitle
+                                    updatedNodes[index] = {...node, enabled: isChecked};
+                                  }
+                                  
                                   setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
                                 }}
                               />
-                            </div>
-                          </>
-                        )}
+                              <span className="slider round"></span>
+                            </label>
+                          </div>
+                        </div>
                         
-                        {/* Time Input fields */}
-                        {node.type === 'timeInput' && (
-                          <>
+                        <div className="node-item-content">
+                        <div className="drag-handle">
+                          <FaGripVertical />
+                        </div>
+                        
+                          {/* Node-specific fields */}
+                          {node.type === 'string' && (
                             <div className="node-field">
-                              <input 
-                                type="text" 
+                          <input 
+                          readOnly
+                            type="text" 
                                 value={node.label} 
-                                placeholder="Label"
-                                onChange={(e) => {
+                                placeholder="Text to display"
+                            onChange={(e) => {
                                   const updatedNodes = [...selectedPolicy.subPoliciesNodes];
                                   updatedNodes[index] = {...node, label: e.target.value};
                                   setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
-                                }}
-                              />
-                            </div>
-                            <div className="node-field">
-                      <select 
-                                value={node.timeFormat || 'specific'} 
-                        onChange={(e) => {
-                                  const updatedNodes = [...selectedPolicy.subPoliciesNodes];
-                          updatedNodes[index] = {
-                            ...node, 
-                                    timeFormat: e.target.value as 'specific' | 'duration',
-                                    value: '' // Reset value when format changes
-                                  };
-                                  setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
-                                }}
-                              >
-                                <option value="specific">Specific</option>
-                                <option value="duration">Duration</option>
-                      </select>
-                            </div>
-                            <div className="node-field">
-                              {node.timeFormat === 'duration' ? (
+                            }}
+                            />
+                        </div>
+                          )} 
+                          
+                          {/* String Input fields */}
+                          {node.type === 'stringInput' && (
+                            <>
+                          <div className="node-field">
+                          <input 
+                            type="text" 
+                            value={node.label} 
+                                  placeholder="Label"
+                            onChange={(e) => {
+                                    const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                              updatedNodes[index] = {...node, label: e.target.value};
+                                    setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                          }} />
+                        </div>
+
+                              <div className="node-field">
                                 <input 
                                   type="text" 
                                   value={node.value || ''} 
-                                  placeholder="e.g. 30ms"
+                                  placeholder="Default value"
                                   onChange={(e) => {
                                     const updatedNodes = [...selectedPolicy.subPoliciesNodes];
                                     updatedNodes[index] = {...node, value: e.target.value};
                                     setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
                                   }}
                                 />
-                              ) : (
-                                <input 
-                                  type="time" 
-                                  value={node.value || ''} 
-                                  onChange={(e) => {
-                                    const updatedNodes = [...selectedPolicy.subPoliciesNodes];
-                                    updatedNodes[index] = {...node, value: e.target.value};
-                                    setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
-                                  }}
-                                />
-                              )}
-                            </div>
-                          </>
-                        )}
-                        
-                        {/* Operator fields */}
-                      {node.type === 'operator' && (
-                          <>
-                            <div className="node-field">
-                        <select 
-                          value={node.operatorType || 'and'} 
-                          onChange={(e) => {
-                                  const updatedNodes = [...selectedPolicy.subPoliciesNodes];
-                            updatedNodes[index] = {...node, operatorType: e.target.value};
-                                  setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
-                                }}
-                              >
-                                <option value="and">AND (&&)</option>
-                                <option value="or">OR (||)</option>
-                                <option value="xor">XOR (⊕)</option>
-                                <option value="not">NOT (!)</option>
-                                <option value="eq">Equals (==)</option>
-                                <option value="neq">Not Equals (!=)</option>
-                                <option value="gt">Greater Than ({'>'})</option>
-                                <option value="gte">Greater Than or Equal (≥)</option>
-                                <option value="lt">Less Than ({'<'})</option>
-                                <option value="lte">Less Than or Equal (≤)</option>
-                                <option value="contains">Contains (∋)</option>
-                                <option value="startswith">Starts With (^=)</option>
-                                <option value="endswith">Ends With ($=)</option>
-                                <option value="matches">Matches (≈)</option>
-                                <option value="newline">New Line</option>
-                        </select>
-                            </div>
+                              </div>
+                            </>
+                          )}
+                          
+                          {/* Time Input fields */}
+                          {node.type === 'timeInput' && (
                             
-                            {node.operatorType !== 'newline' && (
-                              <>
-                                <div className="operator-params">
-                                  <div className="node-field">
-                                    <select 
-                                      value={node.leftParam?.type || 'string'} 
-                                      onChange={(e) => {
-                                        const updatedNodes = [...selectedPolicy.subPoliciesNodes];
-                                        updatedNodes[index] = {
-                                          ...node, 
-                                          leftParam: {
-                                            type: e.target.value as 'string' | 'input',
-                                            value: node.leftParam?.value || ''
-                                          }
-                                        };
-                                        setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
-                                      }}
-                                    >
-                                      <option value="string">Text</option>
-                                      <option value="input">Input</option>
-                                    </select>
-                        <input 
-                          type="text" 
+                            <>
+                              <div className="node-field">
+                                <input 
+                                  type="text" 
+                                  value={node.label} 
+                                  onChange={(e) => {
+                                    const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                                    updatedNodes[index] = {...node, label: e.target.value};
+                                    setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                                  }}
+                                />
+                              </div>
+                              <div className="node-field">
+                        <select 
+                                  value={node.timeFormat || 'specific'} 
+                          onChange={(e) => {
+                                    const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                            updatedNodes[index] = {
+                              ...node, 
+                                      timeFormat: e.target.value as 'specific' | 'duration',
+                                      value: '' // Reset value when format changes
+                                    };
+                                    setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                                  }}
+                                >
+                                  <option value="specific">Specific</option>
+                                  <option value="duration">Duration</option>
+                        </select>
+                              </div>
+                              <div className="node-field">
+                                {node.timeFormat === 'duration' ? (
+                                  <input 
+                                    type="text" 
+                                    value={node.value || ''} 
+                                    placeholder="e.g. 30ms"
+                                    onChange={(e) => {
+                                      const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                                      updatedNodes[index] = {...node, value: e.target.value};
+                                      setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                                    }}
+                                  />
+                                ) : (
+                                  <input 
+                                    type="time" 
+                                    value={node.value || ''} 
+                                    onChange={(e) => {
+                                      const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                                      updatedNodes[index] = {...node, value: e.target.value};
+                                      setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                                    }}
+                                  />
+                                )}
+                              </div>
+                            </>
+                          )}
+                          
+                          {/* Operator fields */}
+                        {node.type === 'operator' && (
+                            <>
+                              {node.operatorType !== 'newline' ? (
+                                <>
+                                  <div className="operator-params">
+                                    <div className="node-field">
+                                      
+                          <input 
+                            type="text" 
                                       value={node.leftParam?.value || ''} 
                                       placeholder="Left param"
+                                      readOnly
                           onChange={(e) => {
                                         const updatedNodes = [...selectedPolicy.subPoliciesNodes];
                                         updatedNodes[index] = {
@@ -1569,27 +1971,37 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
                                     />
                                   </div>
                                   
-                                  <div className="operator-symbol">{getOperatorSymbol(node.operatorType)}</div>
-                                  
-                                  <div className="node-field">
+                                  <div className="operator-symbol">
                                     <select 
-                                      value={node.rightParam?.type || 'string'} 
+                                      value={node.operatorType || 'and'} 
                                       onChange={(e) => {
                                         const updatedNodes = [...selectedPolicy.subPoliciesNodes];
-                                        updatedNodes[index] = {
-                                          ...node, 
-                                          rightParam: {
-                                            type: e.target.value as 'string' | 'input',
-                                            value: node.rightParam?.value || ''
-                                          }
-                                        };
+                                        updatedNodes[index] = {...node, operatorType: e.target.value};
                                         setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
                                       }}
+                                      className="symbol-only-select"
                                     >
-                                      <option value="string">Text</option>
-                                      <option value="input">Input</option>
+                                      <option value="and">&&</option>
+                                      <option value="or">||</option>
+                                      <option value="xor">⊕</option>
+                                      <option value="not">!</option>
+                                      <option value="eq">==</option>
+                                      <option value="neq">!=</option>
+                                      <option value="gt">{'>'}</option>
+                                      <option value="gte">≥</option>
+                                      <option value="lt">{'<'}</option>
+                                      <option value="lte">≤</option>
+                                      <option value="contains">∋</option>
+                                      <option value="startswith">^=</option>
+                                      <option value="endswith">$=</option>
+                                      <option value="matches">≈</option>
+                                      <option value="newline">↵</option>
                                     </select>
-                        <input 
+                                  </div>
+                                  
+                                  <div className="node-field">
+
+                          <input 
                                       type="text" 
                                       value={node.rightParam?.value || ''} 
                                       placeholder="Right param"
@@ -1608,397 +2020,673 @@ const Signals: React.FC<MainNavigationProps> = ({ activeTab, setActiveTab }) => 
                                   </div>
                                 </div>
                               </>
+                            ) : (
+                              <div className="operator-symbol">
+                                <select 
+                                  value={node.operatorType || 'and'} 
+                                  onChange={(e) => {
+                                    const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                                    updatedNodes[index] = {...node, operatorType: e.target.value};
+                                    setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
+                                  }}
+                                  className="symbol-only-select"
+                                >
+                                  <option value="and">&&</option>
+                                  <option value="or">||</option>
+                                  <option value="xor">⊕</option>
+                                  <option value="not">!</option>
+                                  <option value="eq">==</option>
+                                  <option value="neq">!=</option>
+                                  <option value="gt">{'>'}</option>
+                                  <option value="gte">≥</option>
+                                  <option value="lt">{'<'}</option>
+                                  <option value="lte">≤</option>
+                                  <option value="contains">∋</option>
+                                  <option value="startswith">^=</option>
+                                  <option value="endswith">$=</option>
+                                  <option value="matches">≈</option>
+                                  <option value="newline">↵</option>
+                                </select>
+                              </div>
                             )}
                           </>
                         )}
                         
+                      </div>
+                    </div>
+                    
+                    {/* Add operator selector badge after each node except for subtitles and the last node */}
+                    {index < selectedPolicy.subPoliciesNodes.length - 1 && 
+                     node.type !== 'string' && // Not a subtitle
+                     selectedPolicy.subPoliciesNodes[index + 1].type !== 'string' && // Next node is not a subtitle
+                     selectedPolicy.subPoliciesNodes[index + 1].enabled !== false && // Next node is enabled
+                     node.enabled !== false && // Current node is enabled
+                     (() => {
+                       // Find if we're still in the same subtitle section as the next node
+                       const currentSubtitleIndex = [...selectedPolicy.subPoliciesNodes].slice(0, index + 1)
+                         .reverse()
+                         .findIndex(n => n.type === 'string');
+                       
+                       const nextSubtitleIndex = selectedPolicy.subPoliciesNodes
+                         .slice(index + 1)
+                         .findIndex(n => n.type === 'string');
+                       
+                       // Only show if in same subtitle section
+                       const inSameSubtitleSection = 
+                         (nextSubtitleIndex === -1 || nextSubtitleIndex > 0); // Next subtitle not immediately after
+                       
+                       return inSameSubtitleSection;
+                     })() && (
+                      <div className="node-operator-selector">
                         <button 
-                          className="remove-node-button"
+                          className={`operator-selector-badge ${node.connectionOperator === 'or' ? 'or' : ''}`}
                           onClick={() => {
-                            const updatedNodes = selectedPolicy.subPoliciesNodes.filter((_, i) => i !== index);
+                            const updatedNodes = [...selectedPolicy.subPoliciesNodes];
+                            updatedNodes[index] = {
+                              ...node,
+                              connectionOperator: node.connectionOperator === 'or' ? 'and' : 'or'
+                            };
                             setSelectedPolicy({...selectedPolicy, subPoliciesNodes: updatedNodes});
                           }}
                         >
-                          <FaTrash />
+                          {node.connectionOperator === 'or' ? 'OR' : 'AND'}
                         </button>
                       </div>
-                    </div>
-                  ))}
-                  
-                  {/* Add Node button */}
-                  <button 
-                    className="add-node-button"
-                    onClick={() => {
-                      setSelectedPolicy({
-                        ...selectedPolicy!, 
-                        subPoliciesNodes: [
-                          ...selectedPolicy!.subPoliciesNodes, 
-                          { label: "New Node", type: "string" }
-                        ]
-                      });
-                    }}
-                  >
-                    <FaPlus /> Add New Node
-                  </button>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="nodes-list">
+                <h4>Signal preview:</h4>
+                <div className="node-flow-preview">
+                  <h6>{selectedPolicy.label}</h6>
+                  {selectedPolicy.subPoliciesNodes.reduce((acc: JSX.Element[], node, index, arr) => {
+                    // Check if this is a subtitle (string type node)
+                    if (node.type === 'string' && node.enabled !== false) {
+                      // Add the subtitle
+                      acc.push(
+                        <div key={`subtitle-${index}`} className="node-subtitle">
+                          <span className="node-label subtitle-label">{node.label}</span>
+                        </div>
+                      );
+                      
+                      // Find all nodes until the next subtitle or end
+                      let nextSubtitleIndex = arr.findIndex((n, i) => 
+                        i > index && n.type === 'string' && n.enabled !== false
+                      );
+                      if (nextSubtitleIndex === -1) nextSubtitleIndex = arr.length;
+                      
+                      // Add the children nodes with indentation
+                      for (let i = index + 1; i < nextSubtitleIndex; i++) {
+                        const childNode = arr[i];
+                        if (childNode.enabled === false) continue;
+                        
+                        acc.push(
+                          <div key={`child-${i}`} className="node-flow-item node-child-item">
+                            {childNode.type === 'stringInput' && (
+                              <div className="node-content">
+                                <span className="node-label">{childNode.label}</span>
+                                <span className="node-value">"{childNode.value || ''}"</span>
+                              </div>
+                            )}
+                            {childNode.type === 'timeInput' && (
+                              <div className="node-content">
+                                <span className="node-label">{childNode.label}</span>
+                                <span className="node-value">{childNode.value || ''}</span>
+                              </div>
+                            )}
+                            {childNode.type === 'operator' && childNode.operatorType !== 'newline' && (
+                              <div className="operator-container">
+                                <span className="operator-param A-param">{childNode.leftParam?.value || ''}</span>
+                                <span className="operator-symbol">{getOperatorSymbol(childNode.operatorType)}</span>
+                                <span className="operator-param B-param">{childNode.rightParam?.value || ''}</span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                        
+                        // Add operator badge if this isn't the last node in this subtitle section
+                        const isLastNodeInSubtitle = i === nextSubtitleIndex - 1;
+                        if (!isLastNodeInSubtitle && arr[i+1]?.enabled !== false) {
+                          acc.push(
+                            <div key={`operator-${i}`} className="node-connection-operator">
+                              <span className="operator-badge">
+                                {childNode.connectionOperator?.toUpperCase() || 'AND'}
+                              </span>
+                            </div>
+                          );
+                        }
+                      }
+                    }
+                    return acc;
+                  }, [])}
                 </div>
               </div>
-            ) : (
-              <>
-                <div className="nodes-list">
-                  <h3>Applied Nodes:</h3>
-                  <div className="node-flow-preview">
-                    {selectedPolicy.subPoliciesNodes.map((node, index) => (
-                      <React.Fragment key={index}>
-                        {node.type === 'operator' && node.operatorType === 'newline' ? (
-                          <div className="node-flow-break"></div>
-                        ) :  node.enabled === true ? (
-                          <div className={`node-flow-item node-type-${node.type} `}>
-                            {node.type === 'string' && (
-                          <span className="node-label">{node.label}</span>
-                            )}
-                            {node.type === 'stringInput' && (
-                              <div>
-                                <span className="node-label">{node.label}</span>
-                                <input type="text" value={node.value || ''} readOnly />
-                        </div>
-                            )}
-                            {node.type === 'timeInput' && (
-                              <div>
-                                <span className="node-label">{node.label}</span>
-                                <input 
-                                  type={node.timeFormat === 'duration' ? 'text' : 'time'} 
-                                  value={node.value || ''} 
-                                  readOnly 
-                                />
-                              </div>
-                            )}
-                            {node.type === 'operator' && node.operatorType !== 'newline' && (
-                              <div className="operator-container">
-                                {node.leftParam?.type === 'string' ? (
-                                  <span className="operator-param">{node.leftParam.value}</span>
-                                ) : (
-                                  <input type="text" value={node.leftParam?.value || ''} readOnly className="operator-param" />
-                                )}
-                                
-                                <span className="operator-symbol">{getOperatorSymbol(node.operatorType)}</span>
-                                
-                                {node.rightParam?.type === 'string' ? (
-                                  <span className="operator-param">{node.rightParam.value}</span>
-                                ) : (
-                                  <input type="text" value={node.rightParam?.value || ''} readOnly className="operator-param" />
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ) : (<div />)}
-                        {index < selectedPolicy.subPoliciesNodes.length - 1 && 
-                         !(node.type === 'operator' && node.operatorType === 'newline') &&
-                         !(selectedPolicy.subPoliciesNodes[index+1].type === 'operator' && 
-                           selectedPolicy.subPoliciesNodes[index+1].operatorType === 'newline') && (
-                          <div className="node-connector">
-                            <div className="connector-line"></div>
-                            <div className="connector-arrow">→</div>
-                          </div>
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                </div>
-                <div className="functionality-description">
-                  <p>This policy monitors and detects abnormal patterns based on the configured nodes.</p>
-                  <p>When triggered, it will generate alerts according to the defined thresholds and parameters.</p>
-                </div>
-              </>
-            )}
-          </div>
+              {/* <div className="functionality-description">
+                <p>This policy monitors and detects abnormal patterns based on the configured nodes.</p>
+                <p>When triggered, it will generate alerts according to the defined thresholds and parameters.</p>
+              </div> */}
+            </>
+          )}
         </div>
+      </div>
 
-        {/* Charts section */}
-        <div className="signal-section full-width">
-          <h2>SIGNAL ANALYTICS</h2>
-          <div className="charts-container">
-            <div className="chart-wrapper">
-              <h3>Daily Signal Occurrences</h3>
-              <Line 
-                data={{
-                  labels: chartData.dates,
-                  datasets: [
-                    {
-                      label: 'Occurrences',
-                      data: chartData.occurrences,
-                      borderColor: 'rgba(75, 192, 192, 1)',
-                      backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                      tension: 0.4,
-                      fill: true
-                    }
-                  ]
-                }}
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: {
-                      position: 'top',
-                      labels: {
-                        color: '#fff'
-                      }
-                    },
-                    title: {
-                      display: false
+      {/* Charts section */}
+      <div className="signal-section full-width">
+        <h2>SIGNAL ANALYTICS</h2>
+        <div className="charts-container">
+          <div className="chart-wrapper">
+            <h3>Daily Signal Occurrences</h3>
+            <Line 
+              data={{
+                labels: chartData.dates,
+                datasets: [
+                  {
+                    label: 'Occurrences',
+                    data: chartData.occurrences,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.4,
+                    fill: true
+                  }
+                ]
+              }}
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: {
+                    position: 'top',
+                    labels: {
+                      color: '#fff'
                     }
                   },
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      ticks: {
-                        color: '#aaa'
-                      },
-                      grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                      }
+                  title: {
+                    display: false
+                  }
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    ticks: {
+                      color: '#aaa'
                     },
-                    x: {
-                      ticks: {
-                        color: '#aaa'
-                      },
-                      grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                      }
+                    grid: {
+                      color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                  },
+                  x: {
+                    ticks: {
+                      color: '#aaa'
+                    },
+                    grid: {
+                      color: 'rgba(255, 255, 255, 0.1)'
                     }
                   }
-                }}
-              />
-            </div>
+                }
+              }}
+            />
+          </div>
+          
+          <div className="chart-wrapper">
+            <h3>Affected Users</h3>
+            <Bar
+              data={{
+                labels: chartData.dates,
+                datasets: [
+                  {
+                    label: 'Users Affected',
+                    data: chartData.users,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                  }
+                ]
+              }}
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: {
+                    position: 'top',
+                    labels: {
+                      color: '#fff'
+                    }
+                  },
+                  title: {
+                    display: false
+                  }
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    ticks: {
+                      color: '#aaa'
+                    },
+                    grid: {
+                      color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                  },
+                  x: {
+                    ticks: {
+                      color: '#aaa'
+                    },
+                    grid: {
+                      color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                  }
+                }
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    {/* Folder menu */}
+    {showFolderMenu.show && (
+      <div 
+        className="action-menu"
+        style={{ 
+          position: 'absolute',
+          top: `${menuPosition.top}px`, 
+          left: `${menuPosition.left}px`,
+          padding: '0.6rem',
+          borderRadius: '0.4rem',
+          boxShadow: '0 0.15rem 0.75rem rgba(0, 0, 0, 0.1)',
+          zIndex: 1000
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button 
+          className="menu-item"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
             
-            <div className="chart-wrapper">
-              <h3>Affected Users</h3>
-              <Bar
-                data={{
-                  labels: chartData.dates,
-                  datasets: [
-                    {
-                      label: 'Users Affected',
-                      data: chartData.users,
-                      backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                      borderColor: 'rgba(54, 162, 235, 1)',
-                      borderWidth: 1
-                    }
-                  ]
-                }}
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: {
-                      position: 'top',
-                      labels: {
-                        color: '#fff'
-                      }
-                    },
-                    title: {
-                      display: false
-                    }
-                  },
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      ticks: {
-                        color: '#aaa'
-                      },
-                      grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                      }
-                    },
-                    x: {
-                      ticks: {
-                        color: '#aaa'
-                      },
-                      grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                      }
-                    }
-                  }
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-      </div>
-
-      {/* Folder menu */}
-      {showFolderMenu.show && (
-        <div 
-          className="action-menu"
-          style={{ 
-            position: 'absolute',
-            top: `${menuPosition.top}px`, 
-            left: `${menuPosition.left}px`,
-            padding: '0.6rem',
-            borderRadius: '0.4rem',
-            boxShadow: '0 0.15rem 0.75rem rgba(0, 0, 0, 0.1)',
-            zIndex: 1000
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button 
-            className="menu-item"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              if (showFolderMenu.folderId) {
-                const folder = findFolderById(showFolderMenu.folderId);
-                if (folder) {
-                  const newName = prompt("Enter new folder name:", folder.name);
-                  if (newName && newName.trim() !== "" && newName !== folder.name) {
-                    renameItem(showFolderMenu.folderId, newName.trim());
-                  }
+            if (showFolderMenu.folderId) {
+              const folder = findFolderById(showFolderMenu.folderId);
+              if (folder) {
+                const newName = prompt("Enter new folder name:", folder.name);
+                if (newName && newName.trim() !== "" && newName !== folder.name) {
+                  renameItem(showFolderMenu.folderId, newName.trim());
                 }
               }
-              
-              setShowFolderMenu({ show: false });
-              setOverlayVisible(false);
-            }}
-          >
-            <FaPencilAlt /> Rename
-          </button>
-          <button 
-            className="menu-item"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              if (showFolderMenu.folderId) {
-                handleNewFolder(showFolderMenu.folderId);
-              }
-              
-              setShowFolderMenu({ show: false });
-              setOverlayVisible(false);
-            }}
-          >
-            <FaFolder /> New Folder
-          </button>
-          <button 
-            className="menu-item"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              if (showFolderMenu.folderId) {
-                handleNewInvestigation(showFolderMenu.folderId);
-              }
-              
-              setShowFolderMenu({ show: false });
-              setOverlayVisible(false);
-            }}
-          >
-            <FaFile /> New Investigation
-          </button>
-          <button 
-            className="menu-item delete-action"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              if (showFolderMenu.folderId) {
-                deleteItem(showFolderMenu.folderId);
-              }
-              
-              setShowFolderMenu({ show: false });
-              setOverlayVisible(false);
-            }}
-          >
-            <FaTrash /> Delete
-          </button>
-        </div>
-      )}
-      
-      {/* File action menu */}
-      {showFileMenu.show && (
-        <div 
-          className="action-menu"
-          style={{ 
-            position: 'absolute',
-            top: `${menuPosition.top}px`,
-            left: `${menuPosition.left}px`,
-            padding: '0.6rem',
-            borderRadius: '0.4rem',
-            boxShadow: '0 0.15rem 0.75rem rgba(0, 0, 0, 0.1)',
-            zIndex: 1000
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button 
-            className="menu-item"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              if (showFileMenu.fileId) {
-                const file = findFileById(showFileMenu.fileId);
-                if (file) {
-                  const newName = prompt("Enter new file name:", file.name);
-                  if (newName && newName.trim() !== "" && newName !== file.name) {
-                    renameItem(showFileMenu.fileId, newName.trim());
-                  }
-                }
-              }
-              
-              setShowFileMenu({ show: false });
-              setOverlayVisible(false);
-            }}
-          >
-            <FaPencilAlt /> Rename
-          </button>
-          <button 
-            className="menu-item"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              // In Signals component, we don't have an edit mode for files yet,
-              // so we just close the menu
-              setShowFileMenu({ show: false });
-              setOverlayVisible(false);
-            }}
-          >
-            <FaEdit /> View
-          </button>
-          <button 
-            className="menu-item delete-action"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              
-              if (showFileMenu.fileId) {
-                deleteItem(showFileMenu.fileId);
-              }
-              
-              setShowFileMenu({ show: false });
-              setOverlayVisible(false);
-            }}
-          >
-            <FaTrash /> Delete
-          </button>
-        </div>
-      )}
-
-      {/* Overlay for closing menus */}
-      {overlayVisible && (
-        <div 
-          className="menu-overlay" 
-          onClick={() => {
+            }
+            
             setShowFolderMenu({ show: false });
+            setOverlayVisible(false);
+          }}
+        >
+          <FaPencilAlt /> Rename
+        </button>
+        <button 
+          className="menu-item"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (showFolderMenu.folderId) {
+              handleNewFolder(showFolderMenu.folderId);
+            }
+            
+            setShowFolderMenu({ show: false });
+            setOverlayVisible(false);
+          }}
+        >
+          <FaFolder /> New Folder
+        </button>
+        <button 
+          className="menu-item"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (showFolderMenu.folderId) {
+              handleNewInvestigation(showFolderMenu.folderId);
+            }
+            
+            setShowFolderMenu({ show: false });
+            setOverlayVisible(false);
+          }}
+        >
+          <FaFile /> New Investigation
+        </button>
+        <button 
+          className="menu-item delete-action"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (showFolderMenu.folderId) {
+              deleteItem(showFolderMenu.folderId);
+            }
+            
+            setShowFolderMenu({ show: false });
+            setOverlayVisible(false);
+          }}
+        >
+          <FaTrash /> Delete
+        </button>
+      </div>
+    )}
+    
+    {/* File action menu */}
+    {showFileMenu.show && (
+      <div 
+        className="action-menu"
+        style={{ 
+          position: 'absolute',
+          top: `${menuPosition.top}px`,
+          left: `${menuPosition.left}px`,
+          padding: '0.6rem',
+          borderRadius: '0.4rem',
+          boxShadow: '0 0.15rem 0.75rem rgba(0, 0, 0, 0.1)',
+          zIndex: 1000
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button 
+          className="menu-item"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (showFileMenu.fileId) {
+              const file = findFileById(showFileMenu.fileId);
+              if (file) {
+                const newName = prompt("Enter new file name:", file.name);
+                if (newName && newName.trim() !== "" && newName !== file.name) {
+                  renameItem(showFileMenu.fileId, newName.trim());
+                }
+              }
+            }
+            
             setShowFileMenu({ show: false });
             setOverlayVisible(false);
           }}
-        />
-      )}
-    </div>
-    <style>{`
-      /* Additional styles for select dropdowns */
-      // ... existing styles ...
-    `}</style>
-  </>
+        >
+          <FaPencilAlt /> Rename
+        </button>
+        <button 
+          className="menu-item"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // In Signals component, we don't have an edit mode for files yet,
+            // so we just close the menu
+            setShowFileMenu({ show: false });
+            setOverlayVisible(false);
+          }}
+        >
+          <FaEdit /> View
+        </button>
+        <button 
+          className="menu-item delete-action"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (showFileMenu.fileId) {
+              deleteItem(showFileMenu.fileId);
+            }
+            
+            setShowFileMenu({ show: false });
+            setOverlayVisible(false);
+          }}
+        >
+          <FaTrash /> Delete
+        </button>
+      </div>
+    )}
+
+    {/* Overlay for closing menus */}
+    {overlayVisible && (
+      <div 
+        className="menu-overlay" 
+        onClick={() => {
+          setShowFolderMenu({ show: false });
+          setShowFileMenu({ show: false });
+          setOverlayVisible(false);
+        }}
+      />
+    )}
+  </div>
+  <style>{`
+    /* Additional styles for select dropdowns */
+    .operator-symbol {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border-radius: 4px;
+      padding: 0;
+      margin: 0 4px;
+      flex: 0 0 auto;
+    }
+    
+    .operator-params {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 4px;
+    }
+    
+    .operator-symbol select {
+      background-color: #1e2229;
+      color: #f0f0f0;
+      border: 1px solid #3a3f4a;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      min-width: 50px;
+      text-align-last: center;
+      height: calc(100% - 2px);
+    }
+    
+    .node-field .operator-symbol {
+      height: 100%;
+    }
+    
+    .symbol-only-select {
+      font-size: 0.85rem !important;
+      padding: 2px 4px !important;
+      width: auto !important;
+      background-color: #1e2229 !important;
+      color: #f0f0f0 !important;
+      border: 1px solid #3a3f4a !important;
+      border-radius: 4px !important;
+      min-width: 40px !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
+    }
+    
+    .symbol-only-select:hover {
+      background-color: #2a2f3a !important;
+      border-color: #4a5060 !important;
+    }
+    
+    .symbol-only-select option {
+      text-align: center;
+      font-weight: bold;
+      background-color: #1e2229;
+      color: #f0f0f0;
+      padding: 4px;
+    }
+    
+    /* Make the dropdown menu match the dark theme */
+    .symbol-only-select option:hover {
+      background-color: #2a2f3a;
+    }
+    
+    /* Operator styles in display mode */
+    .operator-container .operator-symbol {
+      background: #1e2229;
+      color: #f0f0f0;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      margin: 0 8px;
+    }
+
+    .node-subtitle {
+      margin-top: 16px;
+      margin-bottom: 8px;
+      font-weight: bold;
+      font-size: 1.05em;
+      color: #e0e0e0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 4px;
+    }
+
+    .subtitle-label {
+      margin-left: 10px;
+    }
+
+    .node-child-item {
+      margin-left: 26px;
+      margin-bottom: 8px;
+      display: flex;
+      align-content: center;  
+      align-items: center;
+      padding: 5px 0;
+    }
+
+    .node-content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .node-value {
+      color: #64B5F6;
+      font-family: monospace;
+    }
+
+    .operator-container {
+      display: flex;
+      min-width: 60%;
+      align-items: center;
+      gap: 8px;
+    }
+    .operator-param.A-param {
+  
+      min-width: 40%; /* Increase width for left parameter */
+      display: inline-block;
+      color: #AED581; 
+      text-overflow: ellipsis;
+      margin-left: 10px;
+      overflow: hidden;
+    }
+    .operator-param.B-param {
+      min-width: 10%; /* Also set a min-width for right parameter for consistency */
+      display: inline-block;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+
+    .node-subtitle {
+      margin-top: 16px;
+      margin-bottom: 12px;
+      font-weight: bold;
+      font-size: 1.05em;
+      color: #e0e0e0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 6px;
+    }
+
+    .section-nodes {
+      margin-left: 15px;
+    }
+
+
+    /* Improved styling for edit mode with subtitle hierarchy */
+    .node-editor-item[data-is-subtitle="true"] {
+      background-color: #2a2f3a;
+      border-left: 3px solid #64B5F6;
+      margin-bottom: 12px;
+    }
+
+    .node-editor-item[data-is-subtitle="true"] + .node-editor-item:not([data-is-subtitle="true"]) {
+      margin-left: 25px;
+      border-left: 1px solid #3a3f4a;
+      padding-left: 10px;
+    }
+
+    /* Add these scrollbar styles to the style section at the end of the file */
+
+    .node-flow-preview {
+      max-height: 400px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 10px; /* Add padding to prevent content from hitting scrollbar */
+    }
+
+    /* Customize scrollbar for node-flow-preview */
+    .node-flow-preview::-webkit-scrollbar {
+      width: 8px;  /* Width of the scrollbar */
+    }
+
+    .node-flow-preview::-webkit-scrollbar-track {
+      background: #1a1d24;  /* Dark background color for the track */
+      border-radius: 4px;
+    }
+
+    .node-flow-preview::-webkit-scrollbar-thumb {
+      background: #3a3f4a;  /* Color of the scrollbar handle */
+      border-radius: 4px;
+      transition: background 0.2s ease;
+    }
+
+    .node-flow-preview::-webkit-scrollbar-thumb:hover {
+      background: #4a5060;  /* Lighter color when hovering */
+    }
+
+    /* Make sure these same styles are applied to signals-container for consistency */
+    .signals-container::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .signals-container::-webkit-scrollbar-track {
+      background: #1a1d24;
+      border-radius: 4px;
+    }
+
+    .signals-container::-webkit-scrollbar-thumb {
+      background: #3a3f4a;
+      border-radius: 4px;
+      transition: background 0.2s ease;
+    }
+
+    .signals-container::-webkit-scrollbar-thumb:hover {
+      background: #4a5060;
+    }
+
+    .section-button-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .section-cancel-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.5rem;
+      color: #e53935; /* Red color for cancel */
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .section-cancel-button:hover {
+      opacity: 1;
+    }
+  `}</style>
+</>
 );
 };
 

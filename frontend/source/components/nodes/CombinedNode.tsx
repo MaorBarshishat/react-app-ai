@@ -19,6 +19,7 @@ interface NodeType {
   leftParam?: { type: 'string' | 'input', value: string };
   rightParam?: { type: 'string' | 'input', value: string };
   enabled?: boolean;
+  connectionOperator?: 'and' | 'or';
 }
 
 // Helper to convert operator types to symbols
@@ -56,152 +57,207 @@ function CombinedNode({ id, data }: NodeProps<Node<{text: string; label: string 
 
   // Filter out disabled nodes
   const enabledNodes = nodeArray.filter(node => node.enabled !== false);
-
-  return (
-    <div className="combined-node">
-      <div className="combined-node-content">
-        {enabledNodes.length > 0 ? (
-          enabledNodes.map((node, index) => (
-            <div 
-              key={index} 
-              className={`node-line ${node.type}`}
-            >
-              {node.type === 'string' && (
-                <div className="string-node">
-                  <span>{node.label}</span>
-                </div>
+  
+  // Group nodes by subtitle for rendering
+  const renderGroupedNodes = () => {
+    if (enabledNodes.length === 0) {
+      return <div className="empty-node">Node configuration empty</div>;
+    }
+    
+    const result: JSX.Element[] = [];
+    let currentSubtitle: NodeType | null = null;
+    let currentGroup: NodeType[] = [];
+    
+    // Helper function to render a group of nodes
+    const renderSubtitleBlock = (subtitle: NodeType | null, nodes: NodeType[]) => {
+      if (nodes.length === 0) return null;
+      
+      return (
+        <div className="subtitle-block" key={subtitle ? subtitle.label : 'default-block'}>
+          {subtitle && (
+            <div className="subtitle-header">
+              {subtitle.label}
+            </div>
+          )}
+          <div className="subtitle-content">
+            {nodes.map((node, nodeIndex) => renderNode(node, nodeIndex, nodes))}
+          </div>
+        </div>
+      );
+    };
+    
+    // Helper function to render a single node
+    const renderNode = (node: NodeType, index: number, groupNodes: NodeType[]) => {
+      return (
+        <div key={index} className={`node-line ${node.type}`}>
+          {node.type === 'stringInput' && (
+            <div className="string-input-node">
+              <label>{node.label}</label>
+              <input 
+                type="text"
+                value={node.value || ''}
+                onChange={(e) => {
+                  // Create a deep copy of the node array
+                  const updatedNodes = [...nodeArray];
+                  // Find the original node index in the full array
+                  const originalIndex = nodeArray.findIndex(n => 
+                    n.label === node.label && n.type === node.type
+                  );
+                  if (originalIndex !== -1) {
+                    updatedNodes[originalIndex] = { ...node, value: e.target.value };
+                    // Update the node data
+                    updateNodeData(id, { label: JSON.stringify(updatedNodes) });
+                  }
+                }}
+                placeholder="Enter value"
+                className="node-input"
+              />
+            </div> 
+          )}
+          
+          {node.type === 'timeInput' && (
+            <div className="time-input-node">
+              <label>{node.label}</label>
+              {node.timeFormat === 'duration' ? (
+                <input 
+                  type="text"
+                  value={node.value || ''}
+                  onChange={(e) => {
+                    const updatedNodes = [...nodeArray];
+                    const originalIndex = nodeArray.findIndex(n => 
+                      n.label === node.label && n.type === node.type
+                    );
+                    if (originalIndex !== -1) {
+                      updatedNodes[originalIndex] = { ...node, value: e.target.value };
+                      updateNodeData(id, { label: JSON.stringify(updatedNodes) });
+                    }
+                  }}
+                  placeholder="e.g. 30ms"
+                  className="node-input"
+                />
+              ) : (
+                <input 
+                  type="time"
+                  value={node.value || ''}
+                  onChange={(e) => {
+                    const updatedNodes = [...nodeArray];
+                    const originalIndex = nodeArray.findIndex(n => 
+                      n.label === node.label && n.type === node.type
+                    );
+                    if (originalIndex !== -1) {
+                      updatedNodes[originalIndex] = { ...node, value: e.target.value };
+                      updateNodeData(id, { label: JSON.stringify(updatedNodes) });
+                    }
+                  }}
+                  className="node-input time-input"
+                />
               )}
-              
-              {node.type === 'stringInput' && (
-                <div className="string-input-node">
-                  <label>{node.label}</label>
+            </div>
+          )}
+          
+          {node.type === 'operator' && node.operatorType === 'newline' ? (
+            <div className="node-divider"></div>
+          ) : node.type === 'operator' && (
+            <div className="operator-node">
+              <div className="operator-param left-param">
+                {node.leftParam?.type === 'input' ? (
                   <input 
                     type="text"
-                    value={node.value || ''}
+                    value={node.leftParam?.value || ''}
                     onChange={(e) => {
-                      // Create a deep copy of the node array
                       const updatedNodes = [...nodeArray];
-                      // Find the original node index in the full array
                       const originalIndex = nodeArray.findIndex(n => 
                         n.label === node.label && n.type === node.type
                       );
                       if (originalIndex !== -1) {
-                        updatedNodes[originalIndex] = { ...node, value: e.target.value };
-                        // Update the node data
+                        updatedNodes[originalIndex] = { 
+                          ...node, 
+                          leftParam: { ...node.leftParam, value: e.target.value } 
+                        };
                         updateNodeData(id, { label: JSON.stringify(updatedNodes) });
                       }
                     }}
-                    placeholder="Enter value"
-                    className="node-input"
+                    className="param-input"
                   />
-                </div> 
-              )}
+                ) : (
+                  <span>{node.leftParam?.value}</span>
+                )}
+              </div>
               
-              {node.type === 'timeInput' && (
-                <div className="time-input-node">
-                  <label>{node.label}</label>
-                  {node.timeFormat === 'duration' ? (
-                    <input 
-                      type="text"
-                      value={node.value || ''}
-                      onChange={(e) => {
-                        const updatedNodes = [...nodeArray];
-                        const originalIndex = nodeArray.findIndex(n => 
-                          n.label === node.label && n.type === node.type
-                        );
-                        if (originalIndex !== -1) {
-                          updatedNodes[originalIndex] = { ...node, value: e.target.value };
-                          updateNodeData(id, { label: JSON.stringify(updatedNodes) });
-                        }
-                      }}
-                      placeholder="e.g. 30ms"
-                      className="node-input"
-                    />
-                  ) : (
-                    <input 
-                      type="time"
-                      value={node.value || ''}
-                      onChange={(e) => {
-                        const updatedNodes = [...nodeArray];
-                        const originalIndex = nodeArray.findIndex(n => 
-                          n.label === node.label && n.type === node.type
-                        );
-                        if (originalIndex !== -1) {
-                          updatedNodes[originalIndex] = { ...node, value: e.target.value };
-                          updateNodeData(id, { label: JSON.stringify(updatedNodes) });
-                        }
-                      }}
-                      className="node-input time-input"
-                    />
-                  )}
-                </div>
-              )}
+              <div className="operator-symbol">
+                {getOperatorSymbol(node.operatorType)}
+              </div>
               
-              {node.type === 'operator' && node.operatorType === 'newline' ? (
-                <div className="node-divider"></div>
-              ) : node.type === 'operator' && (
-                <div className="operator-node">
-                  <div className="operator-param left-param">
-                    {node.leftParam?.type === 'input' ? (
-                      <input 
-                        type="text"
-                        value={node.leftParam?.value || ''}
-                        onChange={(e) => {
-                          const updatedNodes = [...nodeArray];
-                          const originalIndex = nodeArray.findIndex(n => 
-                            n.label === node.label && n.type === node.type
-                          );
-                          if (originalIndex !== -1) {
-                            updatedNodes[originalIndex] = { 
-                              ...node, 
-                              leftParam: { ...node.leftParam, value: e.target.value } 
-                            };
-                            updateNodeData(id, { label: JSON.stringify(updatedNodes) });
-                          }
-                        }}
-                        className="param-input"
-                      />
-                    ) : (
-                      <span>{node.leftParam?.value}</span>
-                    )}
-                  </div>
-                  
-                  <div className="operator-symbol">
-                    {getOperatorSymbol(node.operatorType)}
-                  </div>
-                  
-                  <div className="operator-param right-param">
-                    {node.rightParam?.type === 'input' ? (
-                      <input 
-                        type="text"
-                        value={node.rightParam?.value || ''}
-                        onChange={(e) => {
-                          const updatedNodes = [...nodeArray];
-                          const originalIndex = nodeArray.findIndex(n => 
-                            n.label === node.label && n.type === node.type
-                          );
-                          if (originalIndex !== -1) {
-                            updatedNodes[originalIndex] = { 
-                              ...node, 
-                              rightParam: { ...node.rightParam, value: e.target.value } 
-                            };
-                            updateNodeData(id, { label: JSON.stringify(updatedNodes) });
-                          }
-                        }}
-                        className="param-input"
-                      />
-                    ) : (
-                      <span>{node.rightParam?.value}</span>
-                    )}
-                  </div>
-                </div>
-              )}
-              
+              <div className="operator-param right-param">
+                {node.rightParam?.type === 'input' ? (
+                  <input 
+                    type="text"
+                    value={node.rightParam?.value || ''}
+                    onChange={(e) => {
+                      const updatedNodes = [...nodeArray];
+                      const originalIndex = nodeArray.findIndex(n => 
+                        n.label === node.label && n.type === node.type
+                      );
+                      if (originalIndex !== -1) {
+                        updatedNodes[originalIndex] = { 
+                          ...node, 
+                          rightParam: { ...node.rightParam, value: e.target.value } 
+                        };
+                        updateNodeData(id, { label: JSON.stringify(updatedNodes) });
+                      }
+                    }}
+                    className="param-input"
+                  />
+                ) : (
+                  <span>{node.rightParam?.value}</span>
+                )}
+              </div>
             </div>
-          ))
-        ) : (
-          <div className="empty-node">Node configuration empty</div>
-        )}
+          )}
+          
+          {/* Add more elegant inline connection operators */}
+          {index < groupNodes.length - 1 && 
+           node.connectionOperator && 
+           groupNodes[index + 1].type !== 'string' && 
+           node.type !== 'string' && 
+           !(node.operatorType === 'newline') && (
+            <div className="node-connection">
+              <span className={`node-connection-operator ${node.connectionOperator === 'or' ? 'or-operator' : 'and-operator'}`}>
+                {node.connectionOperator.toUpperCase()}
+              </span>
+            </div>
+          )}
+        </div>
+      );
+    };
+    
+    // Group nodes by subtitle
+    enabledNodes.forEach((node, index) => {
+      if (node.type === 'string') {
+        // When we encounter a new subtitle, render the previous group
+        if (currentGroup.length > 0) {
+          result.push(renderSubtitleBlock(currentSubtitle, currentGroup));
+          currentGroup = [];
+        }
+        currentSubtitle = node;
+      } else {
+        // Add non-subtitle nodes to the current group
+        currentGroup.push(node);
+      }
+      
+      // If this is the last node, render the final group
+      if (index === enabledNodes.length - 1 && currentGroup.length > 0) {
+        result.push(renderSubtitleBlock(currentSubtitle, currentGroup));
+      }
+    });
+    
+    return result;
+  };
+
+  return (
+    <div className="combined-node">
+      <div className="combined-node-content">
+        {renderGroupedNodes()}
       </div>
       
       {/* Handles for connections */}

@@ -174,7 +174,7 @@ const Policies = () => {
                     onDragStart={(event) => onDragStart(event, subTool.label, subTool.type, tool.color)}
                     draggable
                   >
-                    {subTool.title}  {console.log(subTool)}
+                  {subTool.title}  {console.log(subTool)}
                   </button>
                   
                 ))}

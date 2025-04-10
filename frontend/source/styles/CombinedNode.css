@@ -3,8 +3,8 @@
   border-radius: 6px;
   border: 1px solid #3d4450;
   padding: 8px;
-  min-width: 160px;
-  max-width: 280px;
+  min-width: 260px;
+  max-width: 370px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
   position: relative;
 }
@@ -44,8 +44,9 @@
 
 .string-input-node label, .time-input-node label {
   color: #e1e5ec;
-  font-size: 0.9rem;
-  margin-bottom: 2px;
+  font-size: 1.05rem;
+  margin-bottom: 4px;
+  font-weight: 500;
 }
 
 .node-input {
@@ -118,4 +119,172 @@
   text-align: center;
   padding: 6px;
   font-size: 0.85rem;
+}
+
+
+.and-operator {
+  background-color: #2a3958;
+  color: #90caf9;
+}
+
+.or-operator {
+  background-color: #5d3532;
+  color: #ffab91;
+}
+
+.operator-text {
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+
+/* Add these new styles for subtitle blocks and improved node appearance */
+
+/* Subtitle block styling */
+.subtitle-block {
+  margin-bottom: 12px;
+  border: 1px solid #3d4450;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.subtitle-header {
+  background-color: #2c3240;
+  padding: 8px 10px;
+  color: #e1e5ec;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border-bottom: 1px solid #3d4450;
+}
+
+.subtitle-content {
+  padding: 6px 0;
+}
+
+/* Node line without separate borders within a block */
+.subtitle-content .node-line {
+  border-radius: 0;
+  margin: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: transparent;
+  padding: 6px 0;
+}
+
+.subtitle-content .node-line:last-child {
+  border-bottom: none;
+}
+
+.subtitle-content .node-line:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.and-operator {
+  color: #90caf9;
+}
+
+.or-operator {
+  color: #ffab91;
+}
+
+/* Update operator display to be more inline */
+.operator-node {
+  padding: 4px 8px;
+}
+
+/* Update string-input-node and time-input-node for better alignment */
+.string-input-node, .time-input-node {
+  padding: 6px 8px;
+}
+
+/* Improved empty node styling */
+.empty-node {
+  padding: 12px;
+  text-align: center;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+/* Replace the existing connection operator styles with these improved versions */
+.node-connection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  height: 10px;
+}
+
+.connection-line {
+  width: 100%;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+}
+
+.node-connection-operator {
+  position: absolute;
+  top: 50%;
+  transform: translate(-0%, calc(-50% + 22px));
+  font-size: 0.65rem;
+  background-color: #2c3240;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  z-index: 2;
+  min-width: 30px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.and-operator {
+  color: #90caf9;
+  border: 1px solid rgba(144, 202, 249, 0.3);
+}
+
+.or-operator {
+  color: #ffab91;
+  border: 1px solid rgba(255, 171, 145, 0.3);
+}
+
+/* Make sure operator nodes look better */
+.subtitle-content .operator-node {
+  border-radius: 4px;
+  margin: 4px 8px;
+  padding: 6px;
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Make string inputs look better in the subtitle content */
+.subtitle-content .string-input-node,
+.subtitle-content .time-input-node {
+  margin: 0 8px;
+  padding: 6px 0;
+}
+
+/* Style for the label in inputs */
+.subtitle-content .string-input-node label,
+.subtitle-content .time-input-node label {
+  margin-bottom: 5px;
+  color: #d0d9e4;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Style the node-input better */
+.subtitle-content .node-input {
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid #3d4450;
+  color: #e1e5ec;
+  padding: 4px 8px;
+  border-radius: 4px;
+  height: 26px;
+}
+
+.subtitle-content .node-input:focus {
+  border-color: #64b5f6;
+  outline: none;
 }
